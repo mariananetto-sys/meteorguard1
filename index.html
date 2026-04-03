@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>METEORGUARD | Global Weather & Rain Monitor</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Background animated gradient -->
+        <div class="bg-animated"></div>
+
+        <!-- Header -->
+        <header class="header neon-glass border-bottom">
+            <div class="logo">
+                <i class="fa-solid fa-meteor neon-text-blue logo-icon"></i>
+                <h1>METEOR<span class="neon-text-green">GUARD</span></h1>
+            </div>
+            
+            <div class="search-container">
+                <div class="search-box glass-panel">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" autocomplete="off" placeholder="Buscar cidade...">
+                    <button id="searchBtn" class="glow-btn"><i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+                <div id="searchResults" class="search-results glass-panel hidden"></div>
+            </div>
+
+            <button id="locationBtn" class="glow-btn icon-btn" title="Usar minha localização">
+                <i class="fa-solid fa-location-crosshairs"></i>
+            </button>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard scroll-container">
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="loading-overlay neon-glass hidden">
+                <div class="loader-circle"></div>
+                <p>Sincronizando satélites...</p>
+            </div>
+
+            <!-- Top Section: Current Weather & AI Risk -->
+            <section class="top-section">
+                <!-- Current Weather Hero -->
+                <div class="panel hero-panel neon-glass fade-in">
+                    <div class="location-header">
+                        <h2 id="cityName">Carregando...</h2>
+                        <p id="countryName">Localizando coordenadas</p>
+                    </div>
+                    
+                    <div class="current-weather-main">
+                        <div class="weather-icon-container">
+                            <i id="mainWeatherIcon" class="fa-solid fa-cloud-sun fa-4x mb-icon float-anim"></i>
+                        </div>
+                        <div class="temperature-container">
+                            <h1 id="currentTemp">--°</h1>
+                            <p class="feels-like">Sensação: <span id="feelsLike">--°</span></p>
+                        </div>
+                    </div>
+
+                    <p id="weatherDescription" class="weather-desc">Aguardando dados ambientais</p>
+
+                    <div class="weather-metrics">
+                        <div class="metric glass-badge">
+                            <i class="fa-solid fa-droplet neon-text-blue"></i>
+                            <div>
+                                <p class="metric-label">Umidade</p>
+                                <p class="metric-value"><span id="humidity">--</span>%</p>
+                            </div>
+                        </div>
+                        <div class="metric glass-badge">
+                            <i class="fa-solid fa-wind neon-text-purple"></i>
+                            <div>
+                                <p class="metric-label">Vento</p>
+                                <p class="metric-value"><span id="windSpeed">--</span> km/h</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Risk & Alerts -->
+                <div class="panel risk-panel neon-glass fade-in delay-1">
+                    <h3><i class="fa-solid fa-microchip neon-text-green"></i> Análise de Risco AI</h3>
+                    
+                    <div id="riskIndicator" class="risk-indicator safe transition-all">
+                        <div class="risk-icon"><i id="riskIconHtml" class="fa-solid fa-shield-check"></i></div>
+                        <div class="risk-content">
+                            <h4 id="riskLevelTitle">Nível: Seguro</h4>
+                            <p id="riskMessage">Condições ideais. Nenhuma anomalia detectada no radar.</p>
+                        </div>
+                    </div>
+
+                    <div class="rain-stats">
+                        <div class="stat-box glass-badge hover-glow">
+                            <p>Precipitação Atual</p>
+                            <h3 id="currentRain" class="neon-text-blue">0.0 mm</h3>
+                        </div>
+                        <div class="stat-box glass-badge hover-glow">
+                            <p>Chuva Acumulada Dia</p>
+                            <h3 id="dailyRain" class="neon-text-blue">0.0 mm</h3>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Middle Section: Map and Charts -->
+            <section class="middle-section">
+                <!-- Interactive Map -->
+                <div class="panel map-panel neon-glass fade-in delay-2">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-satellite-dish neon-text-blue blink-anim"></i> Radar Global Open-Meteo</h3>
+                        <span class="badge live-badge">AO VIVO</span>
+                    </div>
+                    <div id="map" class="map-container"></div>
+                </div>
+
+                <!-- Extended Forecast 7 days -->
+                <div class="panel chart-panel neon-glass fade-in delay-3">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-chart-area neon-text-purple"></i> Tendência 7 Dias</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                    
+                    <div class="daily-forecast-list" id="dailyForecastList">
+                        <!-- JS injected -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="services.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
