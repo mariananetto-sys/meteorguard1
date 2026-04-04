@@ -358,8 +358,11 @@ document.addEventListener('DOMContentLoaded', () => {
             DOM.aiRiskFactors.classList.remove('hidden');
             DOM.aiFactorsList.innerHTML = '';
             
+            // Normalize for visual relative bars
+            const sum = prediction.featureImportance.reduce((a, b) => a + b.score, 0);
+            
             prediction.featureImportance.forEach(f => {
-                const pct = Math.min(100, Math.round(f.score * 100 * 2.5)); // Amplicar visualmente o peso
+                const pct = sum > 0 ? Math.round((f.score / sum) * 100) : 0;
                 DOM.aiFactorsList.innerHTML += `
                     <div class="factor-item">
                         <span class="factor-name">${f.feature}</span>

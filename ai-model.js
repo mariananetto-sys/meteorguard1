@@ -744,8 +744,8 @@ class MeteorGuardAI {
         
         finalRisk = Math.min(1.0, Math.max(0.0, finalRisk));
         
-        // v4.0 MAX: Compute SHAP-inspired feature importance
-        const featureImportance = this.computeFeatureImportance(inputVector, finalRisk);
+        // v4.0 MAX: Compute SHAP-inspired feature importance (Use normalized vector)
+        const featureImportance = this.computeFeatureImportance(normalized, finalRisk);
         
         console.log(`[METEORGUARD AI v4.0 MAX] Risk: ${(finalRisk * 100).toFixed(1)}% | Confidence: ${(meanConfidence * 100).toFixed(1)}% | Uncertainty: ${(stdRisk * 100).toFixed(1)}% | Anomaly: ${(anomalyScore * 100).toFixed(1)}%`);
         
@@ -1034,7 +1034,10 @@ class MeteorGuardAI {
         // v4.0 MAX: Causal explanations based on top contributors
         if (topFeatures.length > 0) {
             const top = topFeatures[0];
-            details.push(`🎯 Primary risk driver: ${top.feature} (contribution: ${(top.score * 100).toFixed(1)}%)`);
+            // Normalize for display (approximate contribution)
+            const sum = topFeatures.reduce((a, b) => a + b.score, 0);
+            const share = sum > 0 ? (top.score / sum) * 100 : 0;
+            details.push(`🎯 Primary risk driver: ${top.feature} (contribution: ${share.toFixed(1)}%)`);
         }
 
         // Temperature analysis
