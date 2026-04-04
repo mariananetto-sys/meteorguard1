@@ -32,7 +32,8 @@ const i18n = {
             aiTitle: 'MeteorGuard AI',
             aiProcessing: 'PROCESSANDO',
             aiOnline: 'ONLINE',
-            aiTraining: 'Treinando inteligência artificial...',
+            aiTraining: 'Rede Neural: Treinando 350 cenários climáticos...',
+            aiEpoch: (e, t) => `Época ${e}/${t} — Inicializando neurônios...`,
             aiLastAnalysis: 'Última análise neural',
             currentRain: 'Precipitação Atual',
             dailyRain: 'Chuva Acumulada Dia',
@@ -138,10 +139,12 @@ const i18n = {
             pm25: 'PM2.5',
             visibility: 'Visibility',
 
+            // AI Panel
             aiTitle: 'MeteorGuard AI',
             aiProcessing: 'PROCESSING',
             aiOnline: 'ONLINE',
-            aiTraining: 'Training Artificial Intelligence...',
+            aiTraining: 'Neural Net: Training 350 climate scenarios...',
+            aiEpoch: (e, t) => `Epoch ${e}/${t} — Initializing neurons...`,
             aiLastAnalysis: 'Latest neural analysis',
             currentRain: 'Current Precipitation',
             dailyRain: 'Daily Rainfall',
@@ -238,10 +241,12 @@ const i18n = {
             pm25: 'PM2.5',
             visibility: 'Visibilidad',
 
+            // AI Panel
             aiTitle: 'MeteorGuard AI',
             aiProcessing: 'PROCESANDO',
             aiOnline: 'EN LÍNEA',
-            aiTraining: 'Entrenando inteligencia artificial...',
+            aiTraining: 'Red Neuronal: Entrenando 350 escenarios climáticos...',
+            aiEpoch: (e, t) => `Época ${e}/${t} — Inicializando neuronas...`,
             aiLastAnalysis: 'Último análisis neuronal',
             currentRain: 'Precipitación Actual',
             dailyRain: 'Lluvia Acumulada Día',
