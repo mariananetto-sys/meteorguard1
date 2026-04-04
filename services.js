@@ -9,33 +9,55 @@
  */
 class WeatherService {
     static async getWeather(lat, lon) {
-        // Open-Meteo API endpoint
-        // Fetching current, hourly (for today's rain), and daily forecast
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m&hourly=precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum&timezone=auto`;
+        // Open-Meteo Forecast API — busca TODOS os dados ambientais disponíveis
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_gusts_10m,surface_pressure,cloud_cover,visibility&hourly=precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max&timezone=auto`;
+
+        // Open-Meteo Air Quality API — qualidade do ar em tempo real
+        const airQualityUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm2_5,pm10,uv_index`;
         
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Falha ao buscar dados climáticos');
+            // Buscar de AMBAS as fontes simultaneamente (paralelismo)
+            const [weatherRes, airRes] = await Promise.all([
+                fetch(weatherUrl),
+                fetch(airQualityUrl).catch(() => null) // fallback se air quality falhar
+            ]);
+
+            if (!weatherRes.ok) throw new Error('Falha ao buscar dados climáticos');
             
-            const data = await response.json();
+            const weatherData = await weatherRes.json();
             
-            // Map Open-Meteo response to our App's standard format
+            // Air quality pode falhar em algumas regiões, então protegemos
+            let airData = { current: { pm2_5: 10, pm10: 15, uv_index: 3 } };
+            if (airRes && airRes.ok) {
+                airData = await airRes.json();
+            }
+            
+            // Mapa completo com TODAS as informações ambientais
             return {
                 current: {
-                    temp: data.current.temperature_2m,
-                    feelsLike: data.current.apparent_temperature,
-                    humidity: data.current.relative_humidity_2m,
-                    windSpeed: data.current.wind_speed_10m,
-                    precipitation: data.current.precipitation || 0,
-                    weatherCode: data.current.weather_code
+                    temp: weatherData.current.temperature_2m,
+                    feelsLike: weatherData.current.apparent_temperature,
+                    humidity: weatherData.current.relative_humidity_2m,
+                    windSpeed: weatherData.current.wind_speed_10m,
+                    windGusts: weatherData.current.wind_gusts_10m || 0,
+                    precipitation: weatherData.current.precipitation || 0,
+                    weatherCode: weatherData.current.weather_code,
+                    pressureMsl: weatherData.current.surface_pressure || 1013,
+                    cloudCover: weatherData.current.cloud_cover || 0,
+                    visibility: weatherData.current.visibility || 20000,
+                    // Dados de qualidade do ar
+                    pm25: airData.current?.pm2_5 || 10,
+                    pm10: airData.current?.pm10 || 15,
+                    uvIndex: airData.current?.uv_index || weatherData.daily?.uv_index_max?.[0] || 3
                 },
-                daily: data.daily.time.map((time, index) => ({
+                daily: weatherData.daily.time.map((time, index) => ({
                     date: time,
-                    maxTemp: data.daily.temperature_2m_max[index],
-                    minTemp: data.daily.temperature_2m_min[index],
-                    rainSum: data.daily.precipitation_sum[index],
-                    rainProb: data.daily.precipitation_probability_max[index],
-                    weatherCode: data.daily.weather_code[index]
+                    maxTemp: weatherData.daily.temperature_2m_max[index],
+                    minTemp: weatherData.daily.temperature_2m_min[index],
+                    rainSum: weatherData.daily.precipitation_sum[index],
+                    rainProb: weatherData.daily.precipitation_probability_max[index],
+                    weatherCode: weatherData.daily.weather_code[index],
+                    uvMax: weatherData.daily.uv_index_max?.[index] || 0
                 }))
             };
         } catch (error) {

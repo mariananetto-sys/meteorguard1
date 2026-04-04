@@ -91,18 +91,75 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Dados ambientais extras -->
+                    <div class="weather-metrics" style="margin-top: 15px;">
+                        <div class="metric glass-badge">
+                            <i class="fa-solid fa-gauge neon-text-green"></i>
+                            <div>
+                                <p class="metric-label">Pressão</p>
+                                <p class="metric-value"><span id="pressure">--</span> hPa</p>
+                            </div>
+                        </div>
+                        <div class="metric glass-badge">
+                            <i class="fa-solid fa-sun neon-text-purple"></i>
+                            <div>
+                                <p class="metric-label">UV</p>
+                                <p class="metric-value"><span id="uvIndex">--</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="weather-metrics" style="margin-top: 15px;">
+                        <div class="metric glass-badge">
+                            <i class="fa-solid fa-smog neon-text-blue"></i>
+                            <div>
+                                <p class="metric-label">PM2.5</p>
+                                <p class="metric-value"><span id="pm25">--</span> µg/m³</p>
+                            </div>
+                        </div>
+                        <div class="metric glass-badge">
+                            <i class="fa-solid fa-eye neon-text-green"></i>
+                            <div>
+                                <p class="metric-label">Visibilidade</p>
+                                <p class="metric-value"><span id="visibilityVal">--</span> km</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- AI Risk & Alerts -->
                 <div class="panel risk-panel neon-glass fade-in delay-1">
-                    <h3><i class="fa-solid fa-microchip neon-text-green"></i> Análise de Risco AI</h3>
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-brain neon-text-green pulse-glow"></i> IA Neural — Análise de Risco</h3>
+                        <span id="aiBadge" class="badge ai-badge">TREINANDO...</span>
+                    </div>
+
+                    <!-- AI Training Progress -->
+                    <div id="aiTrainingBox" class="ai-training-box glass-badge">
+                        <div class="ai-training-header">
+                            <i class="fa-solid fa-microchip neon-text-green blink-anim"></i>
+                            <span>Rede Neural: Treinando 300 cenários climáticos...</span>
+                        </div>
+                        <div class="ai-progress-bar">
+                            <div id="aiProgressFill" class="ai-progress-fill"></div>
+                        </div>
+                        <p id="aiTrainingStatus" class="text-muted" style="font-size:0.8rem; margin-top:8px;">Época 0/50 — Inicializando neurônios...</p>
+                    </div>
                     
+                    <!-- Risk Indicator -->
                     <div id="riskIndicator" class="risk-indicator safe transition-all">
                         <div class="risk-icon"><i id="riskIconHtml" class="fa-solid fa-shield-check"></i></div>
                         <div class="risk-content">
                             <h4 id="riskLevelTitle">Nível: Seguro</h4>
-                            <p id="riskMessage">Condições ideais. Nenhuma anomalia detectada no radar.</p>
+                            <p id="riskMessage">Aguardando treinamento da rede neural...</p>
                         </div>
+                    </div>
+
+                    <!-- AI Detailed Analysis (alerts, suggestions, details) -->
+                    <div id="aiAnalysisSection" class="ai-analysis-section hidden">
+                        <div id="aiAlerts" class="ai-alerts-list"></div>
+                        <div id="aiSuggestions" class="ai-suggestions-list"></div>
+                        <div id="aiDetails" class="ai-details-list"></div>
                     </div>
 
                     <div class="rain-stats">
@@ -115,6 +172,8 @@
                             <h3 id="dailyRain" class="neon-text-blue">0.0 mm</h3>
                         </div>
                     </div>
+
+                    <p id="aiTimestamp" class="text-muted" style="font-size:0.75rem; margin-top:15px; text-align:right;"></p>
                 </div>
             </section>
 
@@ -149,8 +208,10 @@
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
     
     <script src="services.js"></script>
+    <script src="ai-model.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

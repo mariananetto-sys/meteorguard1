@@ -1,5 +1,6 @@
 // ==========================================
 // METEORGUARD MAIN APP LOGIC
+// v2.0 — Com Rede Neural TensorFlow.js
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -9,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMap = null;
     let currentChart = null;
     let searchTimeout = null;
+    let lastWeatherData = null; // Armazena para re-análise da IA
 
     const DOM = {
         overlay: document.getElementById('loadingOverlay'),
@@ -26,12 +28,25 @@ document.addEventListener('DOMContentLoaded', () => {
         weatherDesc: document.getElementById('weatherDescription'),
         humidity: document.getElementById('humidity'),
         windSpeed: document.getElementById('windSpeed'),
+        pressure: document.getElementById('pressure'),
+        uvIndex: document.getElementById('uvIndex'),
+        pm25: document.getElementById('pm25'),
+        visibilityVal: document.getElementById('visibilityVal'),
         
-        // Risk
+        // AI
+        aiBadge: document.getElementById('aiBadge'),
+        aiTrainingBox: document.getElementById('aiTrainingBox'),
+        aiProgressFill: document.getElementById('aiProgressFill'),
+        aiTrainingStatus: document.getElementById('aiTrainingStatus'),
         riskIndicator: document.getElementById('riskIndicator'),
         riskIcon: document.getElementById('riskIconHtml'),
         riskTitle: document.getElementById('riskLevelTitle'),
         riskMessage: document.getElementById('riskMessage'),
+        aiAnalysisSection: document.getElementById('aiAnalysisSection'),
+        aiAlerts: document.getElementById('aiAlerts'),
+        aiSuggestions: document.getElementById('aiSuggestions'),
+        aiDetails: document.getElementById('aiDetails'),
+        aiTimestamp: document.getElementById('aiTimestamp'),
         currentRain: document.getElementById('currentRain'),
         dailyRain: document.getElementById('dailyRain'),
         
@@ -47,9 +62,41 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     init();
 
-    function init() {
+    async function init() {
         setupEventListeners();
+        
+        // Boot AI Neural Network in parallel with location detection
+        bootAI();
         getUserLocation();
+    }
+
+    // -----------------------------------
+    // AI Neural Network Boot
+    // -----------------------------------
+    async function bootAI() {
+        console.log('[METEORGUARD] Inicializando motor de IA...');
+        
+        // Build the model architecture
+        meteorGuardAI.buildModel();
+        
+        // Train with progress callback
+        await meteorGuardAI.train((epoch, total, logs) => {
+            const percent = Math.round((epoch / total) * 100);
+            DOM.aiProgressFill.style.width = `${percent}%`;
+            DOM.aiTrainingStatus.textContent = `Época ${epoch}/${total} — Precisão: ${(logs.acc * 100).toFixed(1)}% | Perda: ${logs.loss.toFixed(4)}`;
+        });
+
+        // Training complete! Update UI
+        DOM.aiTrainingBox.style.display = 'none';
+        DOM.aiBadge.textContent = 'IA ATIVA';
+        DOM.aiBadge.classList.add('active');
+
+        console.log('[METEORGUARD] ✅ IA Neural operacional!');
+
+        // If weather data was already loaded, re-run AI analysis
+        if (lastWeatherData) {
+            runAIAnalysis(lastWeatherData);
+        }
     }
 
     // -----------------------------------
@@ -74,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
             searchTimeout = setTimeout(async () => {
                 const results = await GeocodingService.searchCity(query);
                 renderSearchResults(results);
-            }, 500); // 500ms debounce
+            }, 500);
         });
         
         // Close search when click outside
@@ -93,25 +140,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!navigator.geolocation) {
             console.warn('Geolocation not supported. Falling back to default.');
-            loadCity(-22.9068, -43.1729, "Rio de Janeiro", "Brasil"); // Default: Rio
+            loadCity(-22.9068, -43.1729, "Rio de Janeiro", "Brasil");
             return;
         }
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                // Success
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
-                // Get city name roughly via reverse geocoding concept, but for simplicity, 
-                // we'll just say "Localização Atual" and load data. 
-                // Open-Meteo doesn't have a direct reverse geocode API right now, 
-                // so we will label it as Localização Atual.
                 loadCity(lat, lon, "Localização Atual", "Coordenadas GPS");
             },
             (error) => {
-                // Denied or failed
-                console.warn('Geolocation permission denied or failed. Falling back to default.', error);
-                loadCity(-22.9068, -43.1729, "Rio de Janeiro", "Brasil"); // Default: Rio
+                console.warn('Geolocation permission denied or failed.', error);
+                loadCity(-22.9068, -43.1729, "Rio de Janeiro", "Brasil");
             },
             { timeout: 10000 }
         );
@@ -126,14 +167,18 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.searchInput.value = '';
         
         try {
-            // Re-trigger CSS animations
             resetAnimations();
-
             const weatherData = await WeatherService.getWeather(lat, lon);
+            
+            // Store for AI re-analysis
+            lastWeatherData = weatherData;
             
             updateUI(weatherData, name, country);
             updateMap(lat, lon, weatherData.current.precipitation);
             updateChart(weatherData.daily);
+            
+            // Run AI analysis
+            runAIAnalysis(weatherData);
             
         } catch (error) {
             console.error("Failed to load city data:", error);
@@ -141,6 +186,67 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             showLoading(false);
         }
+    }
+
+    // -----------------------------------
+    // AI Analysis Engine
+    // -----------------------------------
+    function runAIAnalysis(weatherData) {
+        const current = weatherData.current;
+        const interpretation = WeatherService.getWeatherInterpretation(current.weatherCode);
+
+        // Build input for the neural network
+        const aiInput = {
+            temperature: current.temp,
+            humidity: current.humidity,
+            windSpeed: current.windSpeed,
+            windGusts: current.windGusts || current.windSpeed * 1.3,
+            precipitation: current.precipitation,
+            pressureMsl: current.pressureMsl || 1013,
+            cloudCover: current.cloudCover || 0,
+            visibility: current.visibility || 20000,
+            uvIndex: current.uvIndex || 3,
+            pm25: current.pm25 || 10,
+            dangerContext: interpretation.dangerContext,
+            weatherCode: current.weatherCode
+        };
+
+        // Get AI prediction
+        const prediction = meteorGuardAI.predict(aiInput);
+
+        // Update Risk Indicator
+        DOM.riskIndicator.className = `risk-indicator ${prediction.level} transition-all`;
+        DOM.riskIcon.className = `fa-solid ${prediction.icon}`;
+        DOM.riskTitle.textContent = prediction.title;
+        DOM.riskMessage.textContent = `Probabilidade de risco calculada pela rede neural: ${prediction.percentage}%`;
+
+        // Render detailed analysis
+        renderAIAnalysis(prediction.analysis);
+
+        // Timestamp
+        DOM.aiTimestamp.textContent = `Última análise neural: ${prediction.timestamp}`;
+    }
+
+    function renderAIAnalysis(analysis) {
+        DOM.aiAnalysisSection.classList.remove('hidden');
+        
+        // Alerts (red)
+        DOM.aiAlerts.innerHTML = '';
+        analysis.alerts.forEach(alert => {
+            DOM.aiAlerts.innerHTML += `<div class="ai-alert-item">${alert}</div>`;
+        });
+
+        // Suggestions (blue)
+        DOM.aiSuggestions.innerHTML = '';
+        analysis.suggestions.forEach(sug => {
+            DOM.aiSuggestions.innerHTML += `<div class="ai-suggestion-item">${sug}</div>`;
+        });
+
+        // Details (gray)
+        DOM.aiDetails.innerHTML = '';
+        analysis.details.forEach(det => {
+            DOM.aiDetails.innerHTML += `<div class="ai-detail-item">${det}</div>`;
+        });
     }
 
     // -----------------------------------
@@ -161,6 +267,12 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.humidity.textContent = current.humidity;
         DOM.windSpeed.textContent = current.windSpeed;
 
+        // Extended environmental data
+        DOM.pressure.textContent = current.pressureMsl ? current.pressureMsl.toFixed(0) : '--';
+        DOM.uvIndex.textContent = current.uvIndex ? current.uvIndex.toFixed(1) : '--';
+        DOM.pm25.textContent = current.pm25 ? current.pm25.toFixed(0) : '--';
+        DOM.visibilityVal.textContent = current.visibility ? (current.visibility / 1000).toFixed(1) : '--';
+
         // Icon update
         DOM.mainIcon.className = `fa-solid ${interpretation.icon} fa-4x mb-icon float-anim neon-text-blue`;
 
@@ -168,14 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.currentRain.textContent = `${current.precipitation} mm/h`;
         const todayRain = data.daily[0].rainSum;
         DOM.dailyRain.textContent = `${todayRain} mm`;
-
-        // AI Risk Logic
-        const risk = AILogicService.analyzeRisk(current.windSpeed, current.precipitation, current.weatherCode);
-        
-        DOM.riskIndicator.className = `risk-indicator ${risk.level} transition-all`;
-        DOM.riskIcon.className = `fa-solid ${risk.icon}`;
-        DOM.riskTitle.textContent = risk.title;
-        DOM.riskMessage.textContent = risk.message;
 
         // Forecast List
         renderForecastList(data.daily);
@@ -185,12 +289,8 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.forecastList.innerHTML = '';
         const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         
-        // Skip index 0 (today)
         for (let i = 1; i < dailyData.length; i++) {
             const dayData = dailyData[i];
-            const dateObj = new Date(dayData.date);
-            // Ensure local timezone bug doesn't shift day by doing simple split or UTC
-            // But since Open-Meteo returns YYYY-MM-DD, a simple new Date("YYYY-MM-DDT00:00:00") is better
             const dateStr = dayData.date + 'T12:00:00'; 
             const realDate = new Date(dateStr);
             const dayName = days[realDate.getDay()];
@@ -246,29 +346,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Map Engine (Leaflet / Simulated Radar)
     // -----------------------------------
     function updateMap(lat, lon, currentPrecipitation) {
-        // If map exists, transition to new location
         if (currentMap) {
             currentMap.setView([lat, lon], 10);
-            
-            // Re-draw circle indicating rain intensity
             drawRadarSim(lat, lon, currentPrecipitation);
             return;
         }
 
-        // Initialize Map
         currentMap = L.map('map', {
             zoomControl: false,
             attributionControl: false
         }).setView([lat, lon], 10);
 
-        // OpenStreetMap Dark/Standard tiles (stylized via CSS invert)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19
         }).addTo(currentMap);
         
-        // Add zoom controls bottom right
         L.control.zoom({ position: 'bottomright' }).addTo(currentMap);
-
         drawRadarSim(lat, lon, currentPrecipitation);
     }
 
@@ -276,18 +369,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function drawRadarSim(lat, lon, rainMm) {
         if (radarCircle) currentMap.removeLayer(radarCircle);
 
-        // Simulate Radar heat bubble. If rain is 0, just show a safe zone.
-        let color = '#00ff88'; // Safe green
-        let radius = 10000; // 10km
+        let color = '#00ff88';
+        let radius = 10000;
 
         if (rainMm > 0 && rainMm <= 2) {
-            color = '#00f0ff'; // Light rain blue
+            color = '#00f0ff';
             radius = 15000;
         } else if (rainMm > 2 && rainMm <= 10) {
-            color = '#b026ff'; // Adv rain purple
+            color = '#b026ff';
             radius = 25000;
         } else if (rainMm > 10) {
-            color = '#ff3366'; // Heavy rain red
+            color = '#ff3366';
             radius = 40000;
         }
 
@@ -297,10 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
             fillOpacity: 0.2,
             radius: radius
         }).addTo(currentMap);
-        
-        // Marker
-        // currentMap.eachLayer((layer) => { if (layer instanceof L.Marker) currentMap.removeLayer(layer) });
-        // L.marker([lat, lon]).addTo(currentMap);
     }
 
     // -----------------------------------
@@ -309,7 +397,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateChart(dailyData) {
         const ctx = document.getElementById('forecastChart').getContext('2d');
         
-        // Transform data
         const labels = dailyData.map(d => {
             const date = new Date(d.date + 'T12:00:00');
             return `${date.getDate()}/${date.getMonth()+1}`;
@@ -322,7 +409,6 @@ document.addEventListener('DOMContentLoaded', () => {
             currentChart.destroy();
         }
 
-        // Dark theme configuration for Chart.js
         currentChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -417,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetAnimations() {
         DOM.panels.forEach(p => {
             p.style.animation = 'none';
-            p.offsetHeight; // trigger reflow
+            p.offsetHeight;
             p.style.animation = null; 
         });
     }
