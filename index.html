@@ -118,7 +118,7 @@
                         </div>
                         <div class="temperature-container">
                             <h1 id="currentTemp">--°</h1>
-                            <p class="feels-like">Sensação: <span id="feelsLike">--°</span></p>
+                            <p class="feels-like"><span data-i18n="feelsLike">Sensação</span>: <span id="feelsLike">--°</span></p>
                         </div>
                     </div>
 
@@ -135,7 +135,7 @@
                         <div class="metric glass-badge">
                             <i class="fa-solid fa-wind neon-text-purple"></i>
                             <div>
-                                <p class="metric-label">Vento</p>
+                                <p class="metric-label" data-i18n="wind">Vento</p>
                                 <p class="metric-value"><span id="windSpeed">--</span> km/h</p>
                             </div>
                         </div>
@@ -146,21 +146,21 @@
                         <div class="metric glass-badge">
                             <i class="fa-solid fa-droplet neon-text-blue"></i>
                             <div>
-                                <p class="metric-label">Umidade</p>
+                                <p class="metric-label" data-i18n="humidity">Umidade</p>
                                 <p class="metric-value"><span id="humidity">--</span>%</p>
                             </div>
                         </div>
                         <div class="metric glass-badge">
                             <i class="fa-solid fa-gauge neon-text-green"></i>
                             <div>
-                                <p class="metric-label">Pressão</p>
+                                <p class="metric-label" data-i18n="pressure">Pressão</p>
                                 <p class="metric-value"><span id="pressure">--</span> hPa</p>
                             </div>
                         </div>
                         <div class="metric glass-badge">
                             <i class="fa-solid fa-sun neon-text-purple"></i>
                             <div>
-                                <p class="metric-label">UV</p>
+                                <p class="metric-label" data-i18n="uv">UV</p>
                                 <p class="metric-value"><span id="uvIndex">--</span></p>
                             </div>
                         </div>
@@ -169,14 +169,14 @@
                         <div class="metric glass-badge">
                             <i class="fa-solid fa-smog neon-text-blue"></i>
                             <div>
-                                <p class="metric-label">PM2.5</p>
+                                <p class="metric-label" data-i18n="pm25">PM2.5</p>
                                 <p class="metric-value"><span id="pm25">--</span> µg/m³</p>
                             </div>
                         </div>
                         <div class="metric glass-badge">
                             <i class="fa-solid fa-eye neon-text-green"></i>
                             <div>
-                                <p class="metric-label">Visibilidade</p>
+                                <p class="metric-label" data-i18n="visibility">Visibilidade</p>
                                 <p class="metric-value"><span id="visibilityVal">--</span> km</p>
                             </div>
                         </div>
@@ -220,16 +220,21 @@
 
                     <div class="rain-stats">
                         <div class="stat-box glass-badge hover-glow">
-                            <p>Precipitação Atual</p>
+                            <p data-i18n="currentRain">Precipitação Atual</p>
                             <h3 id="currentRain" class="neon-text-blue">0.0 mm</h3>
                         </div>
                         <div class="stat-box glass-badge hover-glow">
-                            <p>Chuva Acumulada Dia</p>
+                            <p data-i18n="dailyRain">Chuva Acumulada Dia</p>
                             <h3 id="dailyRain" class="neon-text-blue">0.0 mm</h3>
                         </div>
                     </div>
 
-                    <p id="aiTimestamp" class="text-muted" style="font-size:0.75rem; margin-top:15px; text-align:right;"></p>
+                    <div class="ai-disclaimer-box" style="margin-top: 15px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+                        <i class="fa-solid fa-circle-info neon-text-blue" style="margin-right: 5px;"></i>
+                        <span data-i18n="aiDisclaimer">Nota: Modelo de classificação de risco por IA. Não simula atmosfera física (ECMWF/GFS). Foco no estado atual.</span>
+                    </div>
+
+                    <p id="aiTimestamp" class="text-muted" style="font-size:0.75rem; margin-top:10px; text-align:right;"></p>
                 </div>
             </section>
 

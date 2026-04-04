@@ -1022,58 +1022,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function applyLanguage() {
-        // Update static text elements
-        DOM.searchInput.placeholder = i18n.t('searchPlaceholder');
-        
+        // Universal data-i18n translator
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            const translation = i18n.t(key);
+            
+            if (translation) {
+                // If it's a function (like aiEpoch), we don't handle it here 
+                // as those usually need dynamic values during runtime
+                if (typeof translation === 'string') {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = translation;
+                    } else if (el.classList.contains('weather-desc')) {
+                        // Weather desc usually handled by lastWeatherData check
+                        el.textContent = translation;
+                    } else {
+                        // For most elements, we use innerHTML (to support <b> tags etc)
+                        el.innerHTML = translation;
+                    }
+                }
+            }
+        });
+
         // Update language selector active state
         document.querySelectorAll('.lang-option').forEach(opt => {
             opt.classList.toggle('active', opt.dataset.lang === i18n.current);
         });
 
-        // Update static labels
-        const labels = {
-            '.hero-panel .metric-label': [
-                i18n.t('humidity'), i18n.t('wind'), i18n.t('pressure'), 
-                i18n.t('uv'), i18n.t('pm25'), i18n.t('visibility')
-            ],
-            '.rain-stats p': [
-                i18n.t('currentRain'), i18n.t('dailyRain')
-            ]
-        };
+        // COMPLEX UPDATES (Elements with icons or non-standard structures)
         
-        for (const [selector, texts] of Object.entries(labels)) {
-            const els = document.querySelectorAll(selector);
-            els.forEach((el, i) => { if (texts[i]) el.textContent = texts[i]; });
-        }
-        
-        // Hourly section
+        // Hourly section title with icon
         const hourlyTitle = document.querySelector('.hourly-section .panel-header h3');
         if (hourlyTitle) hourlyTitle.innerHTML = `<i class="fa-solid fa-clock neon-text-blue"></i> ${i18n.t('hourlyTitle')}`;
         
-        const hourlyBadge = document.querySelector('.hourly-section .panel-header .badge');
-        if (hourlyBadge) hourlyBadge.textContent = i18n.t('hourlyBadge');
-        
-        // Radar
+        // Map Radar title with icon
         const radarTitle = document.querySelector('.map-panel .panel-header h3');
         if (radarTitle) radarTitle.innerHTML = `<i class="fa-solid fa-satellite-dish neon-text-blue blink-anim"></i> ${i18n.t('radarTitle')}`;
         
-        const radarBadge = document.querySelector('.map-panel .live-badge');
-        if (radarBadge) radarBadge.textContent = i18n.t('radarLive');
-        
-        // Chart
+        // Chart title with icon
         const chartTitle = document.querySelector('.chart-panel .panel-header h3');
         if (chartTitle) chartTitle.innerHTML = `<i class="fa-solid fa-chart-area neon-text-purple"></i> ${i18n.t('chartTitle')}`;
         
-        // Weekly
+        // Weekly section title with icon
         const weeklyTitle = document.querySelector('.daily-cards-section .panel-header h3');
         if (weeklyTitle) weeklyTitle.innerHTML = `<i class="fa-solid fa-calendar-days neon-text-green"></i> ${i18n.t('weeklyTitle')}`;
         
-        const weeklyBadge = document.querySelector('.daily-cards-section .panel-header .badge');
-        if (weeklyBadge) weeklyBadge.textContent = i18n.t('weeklyBadge');
-        
-        // Favorites header
+        // Favorites header with icon
         const favHeader = document.querySelector('.favorites-header h4');
         if (favHeader) favHeader.innerHTML = `<i class="fa-solid fa-star neon-text-purple"></i> ${i18n.t('savedCities')}`;
+
+        // AI Section Title with icon
+        const aiTitle = document.querySelector('.risk-panel .panel-header h3');
+        if (aiTitle) aiTitle.innerHTML = `<i class="fa-solid fa-sparkles neon-text-green pulse-glow"></i> ${i18n.t('aiTitle')}`;
     }
 });
 

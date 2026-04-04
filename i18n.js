@@ -21,6 +21,7 @@ const i18n = {
 
             // Hero Panel
             feelsLike: 'Sensação',
+            precipitation: 'Precipitação',
             humidity: 'Umidade',
             wind: 'Vento',
             pressure: 'Pressão',
@@ -33,6 +34,7 @@ const i18n = {
             aiProcessing: 'ANALISANDO...',
             aiOnline: 'PRONTO!',
             aiTraining: 'Assistente: Analisando padrões climáticos históricos...',
+            aiDisclaimer: '<b>Nota:</b> Modelo de classificação de risco por IA. Não simula atmosfera física (ECMWF/GFS). Foco no estado atual.',
             aiEpoch: (e, t) => `Processando lote ${e}/${t} — Identificando tendências...`,
             aiLastAnalysis: 'Dados verificados às',
             currentRain: 'Precipitação Atual',
@@ -187,6 +189,7 @@ const i18n = {
             loadingCity: 'Loading...',
 
             feelsLike: 'Feels Like',
+            precipitation: 'Precipitation',
             humidity: 'Humidity',
             wind: 'Wind',
             pressure: 'Pressure',
@@ -199,6 +202,7 @@ const i18n = {
             aiProcessing: 'ANALYZING...',
             aiOnline: 'READY!',
             aiTraining: 'Assistant: Analyzing historical weather patterns...',
+            aiDisclaimer: '<b>Note:</b> AI risk classification model. Does not simulate physical atmosphere (ECMWF/GFS). Focus on current state.',
             aiEpoch: (e, t) => `Processing batch ${e}/${t} — Identifying trends...`,
             aiLastAnalysis: 'Data verified at',
             currentRain: 'Current Precipitation',
@@ -345,6 +349,7 @@ const i18n = {
             loadingCity: 'Cargando...',
 
             feelsLike: 'Sensación',
+            precipitation: 'Precipitación',
             humidity: 'Humedad',
             wind: 'Viento',
             pressure: 'Presión',
@@ -357,6 +362,7 @@ const i18n = {
             aiProcessing: 'ANALIZANDO...',
             aiOnline: '¡LISTO!',
             aiTraining: 'Asistente: Analizando patrones de clima históricos...',
+            aiDisclaimer: '<b>Nota:</b> Modelo de clasificación de riesgo por IA. No simula atmósfera física (ECMWF/GFS). Enfoque en estado actual.',
             aiEpoch: (e, t) => `Procesando lote ${e}/${t} — Identificando tendencias...`,
             aiLastAnalysis: 'Datos verificados a las',
             currentRain: 'Precipitación Actual',

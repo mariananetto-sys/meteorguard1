@@ -342,27 +342,27 @@ class MeteorGuardAI {
 
         if (riskScore < 0.2) {
             level = 'safe';
-            title = '🟢 Clima Estável — Condições Favoráveis';
+            title = i18n.t('aiRiskTitleSafe')(percentage);
             icon = 'fa-shield-check';
             color = '#00ff88';
         } else if (riskScore < 0.4) {
             level = 'low-warning';
-            title = '🟡 Leve Instabilidade — Fique Atento';
+            title = i18n.t('aiRiskTitleWarningLow')(percentage);
             icon = 'fa-umbrella';
             color = '#ffdf00';
         } else if (riskScore < 0.65) {
             level = 'warning';
-            title = '🟠 Tempo Instável — Precaução Recomendada';
+            title = i18n.t('aiRiskTitleWarning')(percentage);
             icon = 'fa-circle-exclamation';
             color = '#ff8800';
         } else if (riskScore < 0.85) {
             level = 'danger';
-            title = '🔴 Condições Severas — Evite Exposição';
+            title = i18n.t('aiRiskTitleDanger')(percentage);
             icon = 'fa-triangle-exclamation';
             color = '#ff3366';
         } else {
             level = 'critical';
-            title = '🚨 Tempo Extremo — Busque Abrigo';
+            title = i18n.t('aiRiskTitleCritical')(percentage);
             icon = 'fa-skull-crossbones';
             color = '#ff0040';
         }
