@@ -125,12 +125,14 @@ export default function handler(req, res) {
     const allowedOrigins = [
         process.env.ALLOWED_ORIGIN || 'https://meteorguard.vercel.app',
         'http://127.0.0.1:5500', 
-        'http://localhost:5500'   // Libera pra desenvolvimento local via VSCode Live Server se precisar
+        'http://localhost:5500',   // Libera pra desenvolvimento local via VSCode Live Server
+        'null'                     // Libera pra desenvolvimento puro de arquivo duplo-click (file:///)
     ];
     
+    // O Chrome manda origin como a string literal "null" se for file:///
     const origin = req.headers.origin;
     
-    // Tratamento estrito de CORS, sem chutar pra "*"
+    // Tratamento estrito de CORS
     if (allowedOrigins.includes(origin) || !origin) {
          res.setHeader('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
     } else {
