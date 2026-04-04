@@ -355,20 +355,37 @@
     <script src="services.js"></script>
     <script src="ai-model.js"></script>
     <script src="app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1"></script>
+
     <!-- MeteorChat: Mini-Intelligence Interface -->
     <div id="meteorChatTrigger" class="chat-trigger fade-in delay-3">
-        <i class="fa-solid fa-comments"></i>
-        <span class="chat-tooltip">Pergunte à IA</span>
+        <i class="fa-solid fa-brain"></i>
+        <span class="chat-tooltip">MeteorChat IA Real</span>
     </div>
 
     <div id="meteorChatWindow" class="chat-window hidden">
         <div class="chat-header">
             <div class="chat-title">
-                <i class="fa-solid fa-robot neon-text-blue"></i>
-                <span>MeteorChat IA</span>
+                <i class="fa-solid fa-sparkles neon-text-blue"></i>
+                <span>MeteorChat IA Real</span>
             </div>
-            <button id="closeChat"><i class="fa-solid fa-xmark"></i></button>
+            <div class="chat-header-actions">
+                <button id="aiModelToggle" class="ai-toggle-btn" title="Alternar IA Local (Real)">
+                    <i class="fa-solid fa-bolt"></i>
+                </button>
+                <button id="closeChat"><i class="fa-solid fa-xmark"></i></button>
+            </div>
         </div>
+        
+        <!-- Model Download Progress -->
+        <div id="llmLoader" class="llm-loader hidden">
+            <div class="llm-loader-header">
+                <span id="llmStatus">Baixando Cérebro Local...</span>
+                <span id="llmPercent">0%</span>
+            </div>
+            <div class="llm-progress"><div id="llmProgressFill" class="llm-progress-fill"></div></div>
+        </div>
+
         <div id="chatMessages" class="chat-messages">
             <div class="message ai-message">
                 Olá! Como posso te ajudar com o clima hoje? Pode perguntar coisas como "Vai chuver?" ou "Dá pra sair hoje?".

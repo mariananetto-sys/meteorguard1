@@ -1681,3 +1681,25 @@ section {
     align-items: center;
     justify-content: center;
 }
+
+/* ==========================================
+   METEORCHAT v5.3 LLM STYLES
+   ========================================== */
+.chat-header-actions { display: flex; gap: 15px; align-items: center; }
+.ai-toggle-btn { 
+    background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; transition: var(--transition);
+    display: flex; align-items: center; justify-content: center;
+}
+.ai-toggle-btn:hover { color: var(--neon-blue); }
+.ai-toggle-btn.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+
+.llm-loader {
+    padding: 12px 20px; background: rgba(0, 0, 0, 0.3); border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
+}
+.llm-loader-header { 
+    display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 6px; 
+    color: var(--neon-blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.llm-progress { width: 100%; height: 3px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; }
+.llm-progress-fill { height: 100%; width: 0%; background: var(--neon-blue); transition: width 0.3s ease; box-shadow: 0 0 10px var(--neon-blue); }
+

@@ -81,13 +81,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // Forecast list
         forecastList: document.getElementById('dailyForecastList'),
 
-        // MeteorChat (v5.2)
+        // MeteorChat (v5.3 LLM)
         chatTrigger: document.getElementById('meteorChatTrigger'),
         chatWindow: document.getElementById('meteorChatWindow'),
         chatMessages: document.getElementById('chatMessages'),
         chatInput: document.getElementById('chatInput'),
         sendChat: document.getElementById('sendChat'),
-        closeChat: document.getElementById('closeChat')
+        closeChat: document.getElementById('closeChat'),
+        aiModelToggle: document.getElementById('aiModelToggle'),
+        llmLoader: document.getElementById('llmLoader'),
+        llmProgressFill: document.getElementById('llmProgressFill'),
+        llmStatus: document.getElementById('llmStatus'),
+        llmPercent: document.getElementById('llmPercent')
     };
 
     // Current city state for favorites
@@ -122,6 +127,19 @@ document.addEventListener('DOMContentLoaded', () => {
         bootAI();
         getUserLocation();
         setupChatListeners();
+        checkHardwareCapability();
+    }
+
+    function checkHardwareCapability() {
+        const mem = navigator.deviceMemory || 8;
+        const cores = navigator.hardwareConcurrency || 4;
+        
+        // Auto-enable Real AI if PC is good (mem >= 4GB and cores >= 4)
+        if (mem >= 4 && cores >= 4) {
+            console.log("[METEORGUARD] High-end hardware detected. Enabling Real AI by default.");
+            meteorGuardAI.useLLM = true;
+            if (DOM.aiModelToggle) DOM.aiModelToggle.classList.add('active');
+        }
     }
 
     // -----------------------------------
@@ -1117,7 +1135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -----------------------------------
-    // MeteorChat: Interactive Logic (v5.2)
+    // MeteorChat: Interactive Logic (v5.3)
     // -----------------------------------
     function setupChatListeners() {
         if (!DOM.chatTrigger) return;
@@ -1137,9 +1155,19 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
+
+        if (DOM.aiModelToggle) {
+            DOM.aiModelToggle.addEventListener('click', () => {
+                meteorGuardAI.useLLM = !meteorGuardAI.useLLM;
+                DOM.aiModelToggle.classList.toggle('active', meteorGuardAI.useLLM);
+                
+                const status = meteorGuardAI.useLLM ? "IA Local (Real) Ativada" : "Motor Leve Ativado";
+                appendChatMsg('ai', `Modo alterado: ${status}`);
+            });
+        }
     }
 
-    function sendMessage() {
+    async function sendMessage() {
         const query = DOM.chatInput.value.trim();
         if (!query) return;
 
@@ -1147,21 +1175,38 @@ document.addEventListener('DOMContentLoaded', () => {
         appendChatMsg('user', query);
         DOM.chatInput.value = '';
 
-        // 2. AI Thinking
+        // 2. Thinking indicator
         const thinkingId = 'thinking-' + Date.now();
-        appendChatMsg('ai', 'Pensando...', thinkingId);
+        appendChatMsg('ai', 'Processando...', thinkingId);
 
-        // 3. Mini-NLP Loop
-        setTimeout(() => {
+        try {
+            // AI Response logic (Hybrid v5.3)
+            const aiResponse = await meteorGuardAI.askAI(query, lastWeatherData?.current || { 
+                temperature: 20, humidity: 50, windSpeed: 0, windGusts: 0, precipitation: 0, pressureMsl: 1013 
+            }, (p) => {
+                // Progress callback for LLM download
+                if (p.status === 'progress') {
+                    DOM.llmLoader.classList.remove('hidden');
+                    const percent = Math.round(p.progress || 0);
+                    DOM.llmProgressFill.style.width = `${percent}%`;
+                    if (DOM.llmPercent) DOM.llmPercent.textContent = `${percent}%`;
+                } else if (p.status === 'ready') {
+                    DOM.llmLoader.classList.add('hidden');
+                }
+            });
+
+            // Remove thinking msg and add real response
             const thinkingElement = document.getElementById(thinkingId);
             if (thinkingElement) thinkingElement.remove();
 
-            const aiResponse = meteorGuardAI.askAI(query, lastWeatherData?.current || { 
-                temperature: 20, humidity: 50, windSpeed: 0, windGusts: 0, precipitation: 0, pressureMsl: 1013 
-            });
-
             appendChatMsg('ai', aiResponse);
-        }, 1000);
+        } catch (e) {
+            console.error(e);
+            const thinkingElement = document.getElementById(thinkingId);
+            if (thinkingElement) thinkingElement.remove();
+            appendChatMsg('ai', "Tive um erro no meu cérebro local. Vou usar o motor reserva.");
+            meteorGuardAI.useLLM = false;
+        }
     }
 
     function appendChatMsg(type, text, id = null) {

@@ -45,6 +45,10 @@ class MeteorGuardAI {
             locationRisk: { min: 0,     max: 1,     mean: 0.5,  std: 0.3  }  // Merged: coastal + regional
         };
 
+        // LLM State (v5.3)
+        this.llmPipeline = null;
+        this.useLLM = false;
+
         console.log('╔════════════════════════════════════════════════════════════╗');
         console.log('║  🧠 MeteorGuard AI — Sistema de Monitoramento Ativo      ║');
         console.log('╚════════════════════════════════════════════════════════════╝');
@@ -348,9 +352,64 @@ class MeteorGuardAI {
     }
 
     /**
-     * MeteorChat: Mini-NLP Engine (Interactive v5.2)
+     * MeteorChat: Hybrid Intelligence Engine (v5.3)
      */
-    askAI(query, data) {
+    async askAI(query, data, onProgress) {
+        // Fallback or Light Mode?
+        if (!this.useLLM) return this.askLightAI(query, data);
+
+        // Ensure LLM is Ready
+        if (!this.llmPipeline) {
+            await this.initLLM(onProgress);
+        }
+
+        return await this.runLLM(query, data);
+    }
+
+    async initLLM(onProgress) {
+        if (this.llmPipeline) return;
+        try {
+            const { pipeline, env } = window.Transformers;
+            env.allowLocalModels = false; // Force CDN
+
+            this.llmPipeline = await pipeline('text-generation', 'Xenova/LaMini-GPT-124M', {
+                progress_callback: (p) => {
+                    if (onProgress) onProgress(p);
+                }
+            });
+        } catch (e) {
+            console.error("LLM Error:", e);
+            this.useLLM = false; // Fallback permanent for this session
+            throw e;
+        }
+    }
+
+    async runLLM(query, data) {
+        const risk = this.computePhysicsLabel([data.temperature, data.humidity, data.windSpeed, data.windGusts, data.precipitation, data.pressureMsl, 0, 20000, 0, 10]);
+        const riskLevel = this.getRiskTitle(risk);
+        
+        // System context injection
+        const prompt = `System: Você é o MeteorGuard AI, um assistente brasileiro de clima inteligente. 
+Contexto: Temperatura ${data.temperature}°C, Chuva ${data.precipitation}mm, Vento ${data.windSpeed}km/h, Risco ${riskLevel}.
+User: ${query}
+AI:`;
+
+        try {
+            const out = await this.llmPipeline(prompt, {
+                max_new_tokens: 60,
+                temperature: 0.7,
+                repetition_penalty: 1.2,
+                do_sample: true
+            });
+            
+            let response = out[0].generated_text.split('AI:')[1] || "Estou processando isso...";
+            return response.trim();
+        } catch (e) {
+            return "Tive um pequeno lapso aqui no meu processamento local. O que você perguntou?";
+        }
+    }
+
+    askLightAI(query, data) {
         query = query.toLowerCase();
         const risk = this.computePhysicsLabel([data.temperature, data.humidity, data.windSpeed, data.windGusts, data.precipitation, data.pressureMsl, 0, 20000, 0, 10]);
         
