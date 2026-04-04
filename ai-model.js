@@ -250,7 +250,7 @@ class MeteorGuardAI {
         const heuristic = this.computePhysicsLabel([temp, humidity, wind, data.windGusts||wind*1.3, data.precipitation||0, press, data.cloudCover||0, data.visibility||20000, data.uvIndex||0, data.pm25||10]);
         
         // 3. Dynamic Trust Fusion
-        const fusion = this.computeFinalRisk(risk, conf, heuristic, anomaly);
+        const fusion = this.computeFinalRisk(risk, conf, heuristic, anomaly, data);
         const finalRisk = fusion.risk;
 
         // 4. Intelligence Synthesis
@@ -271,12 +271,18 @@ class MeteorGuardAI {
         };
     }
 
-    computeFinalRisk(nnRisk, nnConf, heuristicRisk, anomaly) {
+    computeFinalRisk(nnRisk, nnConf, heuristicRisk, anomaly, data) {
         let weight = Math.max(0.3, Math.min(0.9, 0.7 + (nnConf > 0.8 ? 0.15 : (nnConf < 0.5 ? -0.25 : 0))));
         if (anomaly > 0.7) weight -= 0.2;
         weight = Math.max(0.3, Math.min(0.85, weight));
         
         let risk = (nnRisk * weight) + (heuristicRisk * (1 - weight));
+        
+        // AJUSTE v5.4: Evita falso "céu lindo"
+        if (data && data.cloudCover > 90 && risk < 0.2) {
+            risk += 0.1; 
+        }
+
         if (heuristicRisk > 0.85 && nnRisk < 0.5) risk = Math.max(risk, heuristicRisk * 0.9); // Safety override
         return { risk, nnWeight: weight };
     }
@@ -294,23 +300,65 @@ class MeteorGuardAI {
     }
 
     getDominantSignals(data) {
-        const signals = { critical: [], severe: [], moderate: [], positive: [] };
-        if (data.windGusts > 110) signals.critical.push("Ventos destrutivos");
-        if (data.precipitation > 45) signals.critical.push("Chuva torrencial");
-        if (data.pressureMsl < 975) signals.critical.push("Baixíssima pressão");
-        if (data.pm25 > 250) signals.severe.push("Ar perigoso");
-        if (data.uvIndex >= 11) signals.moderate.push("Radiação UV extrema");
-        if (signals.critical.length === 0 && signals.severe.length === 0 && data.visibility > 15000) signals.positive.push("Visibilidade excelente");
+        const signals = { critical: [], severe: [], moderate: [], positive: [], blockers: [] };
+
+        // 🔴 CRÍTICOS
+        if (data.windGusts > 100) signals.critical.push("rajadas destrutivas");
+        if (data.precipitation > 40) signals.critical.push("chuva torrencial");
+        if (data.pressureMsl < 980) signals.critical.push("pressão extremamente baixa");
+
+        // 🟠 SEVEROS
+        if (data.windSpeed > 50) signals.severe.push("ventos fortes");
+        if (data.precipitation > 15) signals.severe.push("chuva intensa");
+        if (data.visibility < 2000) signals.severe.push("baixa visibilidade");
+
+        // 🟡 MODERADOS
+        if (data.cloudCover > 85) signals.moderate.push("céu totalmente encoberto");
+        if (data.humidity > 85) signals.moderate.push("umidade muito alta");
+        if (data.pressureMsl < 1005) signals.moderate.push("queda de pressão");
+
+        // 🟢 POSITIVOS
+        if (data.visibility > 15000 && data.precipitation === 0 && data.cloudCover < 40) {
+            signals.positive.push("condições abertas e estáveis");
+        }
+
+        // 🚫 BLOQUEADORES DE FRASES POSITIVAS
+        if (
+            data.cloudCover > 80 ||
+            data.visibility < 5000 ||
+            data.precipitation > 2 ||
+            data.windSpeed > 30
+        ) {
+            signals.blockers.push("condições não ideais");
+        }
+
         return signals;
     }
 
     getTopRiskFactors(data, risk) {
         const factors = [];
-        if (data.windGusts > 50) factors.push({ factor: 'Ventos Fortes', percentage: Math.round((data.windGusts/150)*100) });
-        if (data.precipitation > 5) factors.push({ factor: 'Volume de Chuva', percentage: Math.round((data.precipitation/60)*100) });
-        if (data.pressureMsl < 1005) factors.push({ factor: 'Queda de Pressão', percentage: Math.round(((1013-data.pressureMsl)/30)*100) });
-        if (data.humidity > 85) factors.push({ factor: 'Umidade Elevada', percentage: Math.round(data.humidity) });
-        return factors.slice(0, 3).sort((a,b) => b.percentage - a.percentage);
+        const pushFactor = (name, value) => {
+            factors.push({
+                factor: name,
+                score: value
+            });
+        };
+
+        pushFactor('Vento', data.windSpeed / 100);
+        pushFactor('Rajadas', data.windGusts / 150);
+        pushFactor('Chuva', data.precipitation / 50);
+        pushFactor('Pressão', (1013 - data.pressureMsl) / 40);
+        pushFactor('Visibilidade', (5000 - data.visibility) / 5000);
+        pushFactor('Umidade', data.humidity / 100);
+
+        return factors
+            .filter(f => f.score > 0.2)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 3)
+            .map(f => ({
+                factor: f.factor,
+                percentage: Math.round(f.score * 100)
+            }));
     }
 
     generateText(data, risk, conf) {
@@ -360,21 +408,22 @@ class MeteorGuardAI {
             text = randomChoice(intros.safe);
         }
 
-        // 2. Corpo Literário e Direto
+        // 2. Corpo Literário e Direto (com BLOQUEIO DE INCOERÊNCIA v5.4)
         if (sigs.critical.length > 0) {
-            text += `percebi ${sigs.critical.join(' e ')} em níveis críticos. É fundamental buscar abrigo e evitar qualquer exposição agora.`;
+            text += `percebi ${sigs.critical.join(' e ')} em níveis críticos. É fundamental buscar abrigo agora.`;
         } else if (risk > 0.7) {
-            text += `o que mais me preocupa agora é **${sigs.severe.join(', ') || 'a instabilidade geral'}**. Se puder, evite áreas abertas e encostas.`;
+            text += `o que mais me preocupa agora é **${sigs.severe.join(', ') || 'a instabilidade geral'}**. Evite áreas abertas.`;
         } else if (risk < 0.35) {
-            if (sigs.positive.length > 0) {
-                text += `temos ${sigs.positive.join(' e ')}. O cenário está ótimo para qualquer atividade externa!`;
+            // BLOQUEIO DE POSITIVIDADE v5.4
+            if (sigs.blockers.length === 0 && sigs.positive.length > 0) {
+                text += `temos ${sigs.positive.join(' e ')}. O cenário está ótimo para atividades externas.`;
             } else {
-                text += "pode seguir com seus planos, os indicadores estão bem estáveis e seguros.";
+                text += "o cenário é relativamente estável, mas não está ideal para atividades ao ar livre no momento.";
             }
         } else {
             // Risco Moderado
             const topF = factors.map(f => f.factor).join(' e ');
-            text += `o risco subiu um pouco devido a **${topF || 'variações na pressão e vento'}**. Não é nada crítico ainda, mas vale ficar atento a mudanças no horizonte.`;
+            text += `o risco subiu um pouco devido a **${topF || 'variações na pressão e vento'}**. Fique de olho no horizonte.`;
         }
 
         return text;
