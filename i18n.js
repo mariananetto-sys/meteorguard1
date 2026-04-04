@@ -37,7 +37,7 @@ const i18n = {
             aiEpoch: (e, t) => `Processando dados ${e}/${t}...`,
             aiLastAnalysis: 'Última análise da IA',
             currentRain: 'Precipitação Atual',
-            dailyRain: 'Chuva Acumulada Dia',
+            dailyRain: 'Previsão p/ Hoje',
 
             riskSafe: 'Nível: Seguro',
             riskWarning: 'Atenção: Clima Adverso',
@@ -237,7 +237,7 @@ const i18n = {
             aiEpoch: (e, t) => `Processing data ${e}/${t}...`,
             aiLastAnalysis: 'Last AI update',
             currentRain: 'Current Precipitation',
-            dailyRain: 'Daily Accumulated Rain',
+            dailyRain: 'Forecast for Today',
 
             riskSafe: 'Level: Safe',
             riskWarning: 'Warning: Adverse Weather',
@@ -429,7 +429,7 @@ const i18n = {
             aiEpoch: (e, t) => `Procesando datos ${e}/${t}...`,
             aiLastAnalysis: 'Última actualización de IA',
             currentRain: 'Precipitación Actual',
-            dailyRain: 'Lluvia Acumulada Día',
+            dailyRain: 'Previsión p/ Hoy',
 
             riskSafe: 'Nivel: Seguro',
             riskWarning: 'Atención: Clima Adverso',
