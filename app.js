@@ -689,13 +689,32 @@ document.addEventListener('DOMContentLoaded', () => {
             currentText += text.charAt(index);
             index++;
             
-            // Smart Highlighting: Bolds critical information instantly when the token completes typing
+            // Smart Highlighting: Destaca conselhos e conclusões importantes
             let parsed = currentText;
-            parsed = parsed.replace(/(PM2\.5:?\s*[0-9]+(?:\.[0-9]+)?\s*µg\/m³)/ig, '<strong class="neon-text-green">$1</strong>');
-            parsed = parsed.replace(/([0-9]+(?:\.[0-9]+)?\s*(?:%|mm\/h|mm|km\/h|hPa|km|°C))/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
-            parsed = parsed.replace(/(ALERTA:.*|Condições críticas.*)/ig, '<strong class="neon-text-red">$1</strong>');
-            parsed = parsed.replace(/(ALERT:.*|Critical conditions.*)/ig, '<strong class="neon-text-red">$1</strong>');
-            parsed = parsed.replace(/(ALERTA:.*|Condiciones críticas.*)/ig, '<strong class="neon-text-red">$1</strong>');
+
+            // Alertas críticos (vermelho)
+            parsed = parsed.replace(/(ALERTA:.*)/ig, '<strong class="neon-text-red">$1</strong>');
+            parsed = parsed.replace(/(ALERT:.*)/ig, '<strong class="neon-text-red">$1</strong>');
+
+            // Conselhos e dicas práticas (negrito branco) — PT
+            parsed = parsed.replace(/(Protetor solar [^.]+\.)/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
+            parsed = parsed.replace(/(Hidrate-se[^.]+\.)/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
+            parsed = parsed.replace(/(Leve guarda-chuva[^.]*\.?)/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
+            parsed = parsed.replace(/(Procure abrigo[^.]+\.)/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
+            parsed = parsed.replace(/(Use máscara[^.]+\.)/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
+            parsed = parsed.replace(/(Evite exposição[^.]+\.)/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
+            parsed = parsed.replace(/(Evite áreas[^.]+\.)/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
+            parsed = parsed.replace(/(NÃO tente atravessar[^.]+\.)/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
+            parsed = parsed.replace(/(Permaneça em abrigo[^.]+\.)/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
+
+            // Conclusões climáticas (verde neon)
+            parsed = parsed.replace(/(Clima estável[^.]+[.!])/g, '<strong class="neon-text-green">$1</strong>');
+            parsed = parsed.replace(/(Condições favoráveis[^.]+[.!])/g, '<strong class="neon-text-green">$1</strong>');
+            parsed = parsed.replace(/(Aproveite o dia[^.]*[.!])/g, '<strong class="neon-text-green">$1</strong>');
+            parsed = parsed.replace(/(Stable weather[^.]+[.!])/g, '<strong class="neon-text-green">$1</strong>');
+            parsed = parsed.replace(/(Enjoy your day[^.]*[.!])/g, '<strong class="neon-text-green">$1</strong>');
+            parsed = parsed.replace(/(Clima estable[^.]+[.!])/g, '<strong class="neon-text-green">$1</strong>');
+            parsed = parsed.replace(/(Disfruta el día[^.]*[.!])/g, '<strong class="neon-text-green">$1</strong>');
 
             element.innerHTML = parsed;
 
