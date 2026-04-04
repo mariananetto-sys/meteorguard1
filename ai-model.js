@@ -226,29 +226,43 @@ class MeteorGuardAI {
 
         const epochs = 50;
         
-        // Callbacks do TensorFlow.js
-        const historyCallback = {
+        // Early Stopping Manual (compatível com TensorFlow.js no navegador)
+        let bestValLoss = Infinity;
+        let patienceCounter = 0;
+        const patience = 5;
+        let stopped = false;
+
+        const callbacks = {
             onEpochEnd: (epoch, logs) => {
                 const mse = logs.mse || 0;
                 if (onProgress) {
                     onProgress(epoch + 1, epochs, logs.loss, mse);
                 }
+
+                // Early Stopping: monitora val_loss
+                const valLoss = logs.val_loss;
+                if (valLoss !== undefined) {
+                    if (valLoss < bestValLoss - 0.0001) {
+                        bestValLoss = valLoss;
+                        patienceCounter = 0;
+                    } else {
+                        patienceCounter++;
+                        if (patienceCounter >= patience) {
+                            stopped = true;
+                            console.log(`[METEORGUARD AI] ⏹️ Early Stopping na época ${epoch + 1} (val_loss estagnado em ${valLoss.toFixed(5)})`);
+                            this.model.stopTraining = true;
+                        }
+                    }
+                }
             }
         };
-
-        // Early Stopping Real: Para o treinamento se o erro de validação parar de cair
-        const earlyStop = tf.callbacks.earlyStopping({
-            monitor: 'val_loss',
-            patience: 5,
-            minDelta: 0.0001
-        });
 
         await this.model.fit(inputs, outputs, {
             epochs: epochs,
             batchSize: 32,
             validationSplit: 0.2,
             shuffle: true,
-            callbacks: [historyCallback, earlyStop]
+            callbacks: callbacks
         });
 
         // Limpar tensores da memória
