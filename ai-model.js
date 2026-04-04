@@ -534,11 +534,32 @@ class MeteorGuardAI {
         const ctx = langObj.aiContext || i18n.translations.pt.aiContext;
         const percentage = Math.round(riskScore * 100);
 
+        // Intro inteligente: detecta contradição clima estável + risco ambiental (UV, PM2.5)
         let intro;
-        if (riskScore < 0.2) intro = ctx.nlgIntroSafe;
-        else if (riskScore < 0.4) intro = ctx.nlgIntroWarn;
-        else if (riskScore < 0.65) intro = ctx.nlgIntroDanger;
-        else intro = ctx.nlgIntroCrit;
+        const hasUVRisk = (data.uvIndex || 0) >= 8;
+        const hasAirRisk = (data.pm25 || 0) > 55;
+        
+        if (riskScore < 0.2 && (hasUVRisk || hasAirRisk)) {
+            // Clima estável MAS com risco ambiental — evita contradição
+            const lang = i18n.current;
+            if (hasUVRisk) {
+                intro = lang === 'en' ? 'Stable weather, but high solar exposure risk.' :
+                        lang === 'es' ? 'Clima estable, pero con riesgo elevado de exposición solar.' :
+                        'Clima estável, porém com risco elevado de exposição solar.';
+            } else {
+                intro = lang === 'en' ? 'Stable weather, but air quality deserves attention.' :
+                        lang === 'es' ? 'Clima estable, pero la calidad del aire merece atención.' :
+                        'Clima estável, porém a qualidade do ar merece atenção.';
+            }
+        } else if (riskScore < 0.2) {
+            intro = ctx.nlgIntroSafe;
+        } else if (riskScore < 0.4) {
+            intro = ctx.nlgIntroWarn;
+        } else if (riskScore < 0.65) {
+            intro = ctx.nlgIntroDanger;
+        } else {
+            intro = ctx.nlgIntroCrit;
+        }
 
         let text = intro + ' ';
         
@@ -575,15 +596,23 @@ class MeteorGuardAI {
         else if (riskScore < 0.65) text += ctx.nlgOutroWarn(percentage);
         else text += ctx.nlgOutroCrit(percentage);
 
-        // Remover repetições (usar Set) e garantir fluidez
-        const uniqueSentences = new Set();
+        // Remover repetições por SIMILARIDADE (não só idênticas)
+        const normalize = (s) => s.toLowerCase().replace(/[^a-záéíóúâêãõç\s]/g, '').trim();
+        const uniqueSentences = [];
         text = text.split('. ')
             .map(s => s.trim())
             .filter(s => {
-                const sClean = s.replace(/\.$/, ''); // Tira o ponto no final se tiver para comparar direito
+                const sClean = s.replace(/\.$/, '');
                 if (!sClean) return false;
-                if (uniqueSentences.has(sClean)) return false;
-                uniqueSentences.add(sClean);
+                const sNorm = normalize(sClean);
+                // Rejeita se >60% das palavras já apareceram em outra frase
+                for (const existing of uniqueSentences) {
+                    const existWords = new Set(existing.split(' '));
+                    const newWords = sNorm.split(' ');
+                    const overlap = newWords.filter(w => w.length > 3 && existWords.has(w)).length;
+                    if (newWords.length > 0 && overlap / newWords.length > 0.6) return false;
+                }
+                uniqueSentences.push(sNorm);
                 return true;
             })
             .join('. ');

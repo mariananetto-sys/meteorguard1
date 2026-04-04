@@ -552,6 +552,7 @@ section {
 .risk-indicator.danger {
     border-color: var(--neon-red);
     background: rgba(255, 51, 102, 0.05);
+    animation: dangerPulse 2s ease-in-out infinite;
 }
 .risk-indicator.danger .risk-icon { color: var(--neon-red); text-shadow: 0 0 15px rgba(255, 51, 102, 0.2); }
 
@@ -560,11 +561,26 @@ section {
     background: rgba(255, 0, 64, 0.08);
     animation: criticalPulse 1.5s ease-in-out infinite;
 }
-.risk-indicator.critical .risk-icon { color: #ff0040; text-shadow: 0 0 20px rgba(255, 0, 64, 0.4); }
+.risk-indicator.critical .risk-icon { 
+    color: #ff0040; 
+    text-shadow: 0 0 20px rgba(255, 0, 64, 0.4); 
+    animation: iconShake 0.4s ease-in-out infinite;
+}
+
+@keyframes dangerPulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(255, 51, 102, 0.08); }
+    50% { box-shadow: 0 0 18px rgba(255, 51, 102, 0.2); }
+}
 
 @keyframes criticalPulse {
     0%, 100% { box-shadow: 0 0 10px rgba(255, 0, 64, 0.1); }
     50% { box-shadow: 0 0 25px rgba(255, 0, 64, 0.3); }
+}
+
+@keyframes iconShake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
 }
 
 .risk-indicator h4 {
