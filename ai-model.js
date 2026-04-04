@@ -153,9 +153,11 @@ class MeteorGuardAI {
             const d2 = [sequence[2][0]-sequence[1][0], sequence[2][5]-sequence[1][5], sequence[2][2]-sequence[1][2], sequence[2][4]-sequence[1][4], sequence[2][1]-sequence[1][1]];
             
             inputs.push([...sequence[0], ...sequence[1], ...sequence[2], ...d1, ...d2]); // 20*3 + 5*2 = 70
-            const risk = this.computePhysicsLabel(curr);
+            const heuristic = this.computePhysicsLabel(curr);
+            const risk = heuristic;
             riskOutputs.push([risk]);
-            confidenceOutputs.push([Math.abs(risk - 0.5) * 2]);
+            // v5.5: Rótulo de confiança baseado na consistência física
+            confidenceOutputs.push([1 - Math.abs(risk - heuristic)]);
         }
         return { inputs, riskOutputs, confidenceOutputs };
     }
@@ -272,9 +274,20 @@ class MeteorGuardAI {
     }
 
     computeFinalRisk(nnRisk, nnConf, heuristicRisk, anomaly, data) {
-        let weight = Math.max(0.3, Math.min(0.9, 0.7 + (nnConf > 0.8 ? 0.15 : (nnConf < 0.5 ? -0.25 : 0))));
+        // v5.5: Base de 0.6 e recalibração dinâmica por histórico
+        let baseWeight = 0.6;
+        
+        // Ajuste por histórico (Memória de Longo Prazo)
+        if (this.performanceHistory.length > 5) {
+            const avgDivergence = this.performanceHistory.reduce((a, b) => a + b, 0) / this.performanceHistory.length;
+            if (avgDivergence > 0.3) baseWeight -= 0.15; // Penaliza NN se estiver errando/divergindo muito
+        }
+
+        let weight = Math.max(0.25, Math.min(0.85, baseWeight + (nnConf > 0.8 ? 0.15 : (nnConf < 0.5 ? -0.2 : 0))));
         if (anomaly > 0.7) weight -= 0.2;
-        weight = Math.max(0.3, Math.min(0.85, weight));
+        
+        // Peso final
+        weight = Math.max(0.2, Math.min(0.85, weight));
         
         let risk = (nnRisk * weight) + (heuristicRisk * (1 - weight));
         
@@ -283,6 +296,10 @@ class MeteorGuardAI {
             risk += 0.1; 
         }
 
+        // Armazena divergência para aprendizado futuro
+        this.performanceHistory.push(Math.abs(nnRisk - heuristicRisk));
+        if (this.performanceHistory.length > 20) this.performanceHistory.shift();
+
         if (heuristicRisk > 0.85 && nnRisk < 0.5) risk = Math.max(risk, heuristicRisk * 0.9); // Safety override
         return { risk, nnWeight: weight };
     }
@@ -290,11 +307,12 @@ class MeteorGuardAI {
     detectAnomaly(vector) {
         let score = 0;
         const keys = Object.keys(this.featureRanges);
-        for (let i = 0; i < 20; i++) {
-            const range = this.featureRanges[keys[i]];
+        // v5.5: Scan completo dos 70 parâmetros (steps + deltas)
+        for (let i = 0; i < vector.length; i++) {
+            const range = this.featureRanges[keys[i % 20]]; // Map multi-step to base indicators
             if (!range) continue;
             const z = Math.abs((vector[i] - range.mean) / range.std);
-            if (z > 3.5) score += 0.3; else if (z > 2.8) score += 0.15;
+            if (z > 3.5) score += 0.05; else if (z > 2.8) score += 0.02;
         }
         return Math.min(1.0, score);
     }

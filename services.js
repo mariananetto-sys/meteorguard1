@@ -9,17 +9,17 @@
  */
 class WeatherService {
     static async getWeather(lat, lon) {
-        // Open-Meteo Forecast API — busca TODOS os dados ambientais disponíveis
-        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_gusts_10m,surface_pressure,cloud_cover,visibility&hourly=temperature_2m,weather_code,precipitation_probability,precipitation,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max&timezone=auto&forecast_hours=24`;
+        // v5.6: Coordenadas precisas mas curtas melhoram estabilidade e cache
+        const rLat = parseFloat(lat).toFixed(4);
+        const rLon = parseFloat(lon).toFixed(4);
 
-        // Open-Meteo Air Quality API — qualidade do ar em tempo real
-        const airQualityUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm2_5,pm10,uv_index`;
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${rLat}&longitude=${rLon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_gusts_10m,surface_pressure,cloud_cover,visibility&hourly=temperature_2m,weather_code,precipitation_probability,precipitation,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max&timezone=auto&forecast_hours=24`;
+        const airQualityUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${rLat}&longitude=${rLon}&current=pm2_5,pm10,uv_index`;
         
         try {
-            // Buscar de AMBAS as fontes simultaneamente (paralelismo)
             const [weatherRes, airRes] = await Promise.all([
                 fetch(weatherUrl),
-                fetch(airQualityUrl).catch(() => null) // fallback se air quality falhar
+                fetch(airQualityUrl).catch(() => null)
             ]);
 
             if (!weatherRes.ok) throw new Error('Falha ao buscar dados climáticos');
