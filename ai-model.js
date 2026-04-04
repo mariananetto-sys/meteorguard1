@@ -13,23 +13,23 @@ class MeteorGuardAI {
         this.isReady = false;
         this.trainingLog = [];
         this.modelKey = 'meteorguard-model-v2.0'; // Upgrade de chave para forçar novo treino na v2.0
-        this._seed = 42; 
-        
+        this._seed = 42;
+
         // Normalização dos inputs (min/max para cada feature)
         this.featureRanges = {
-            temperature:    { min: -30, max: 55 },
-            humidity:       { min: 0,   max: 100 },
-            windSpeed:      { min: 0,   max: 150 },
-            windGusts:      { min: 0,   max: 200 },
-            precipitation:  { min: 0,   max: 100 },
-            pressureMsl:    { min: 950, max: 1060 },
-            cloudCover:     { min: 0,   max: 100 },
-            visibility:     { min: 0,   max: 50000 },
-            uvIndex:        { min: 0,   max: 12 },
-            pm25:           { min: 0,   max: 500 },
-            dangerContext:  { min: 0,   max: 3 },
-            stormIndex:     { min: 0,   max: 12 },
-            instability:    { min: 0,   max: 60 }
+            temperature: { min: -30, max: 55 },
+            humidity: { min: 0, max: 100 },
+            windSpeed: { min: 0, max: 150 },
+            windGusts: { min: 0, max: 200 },
+            precipitation: { min: 0, max: 100 },
+            pressureMsl: { min: 950, max: 1060 },
+            cloudCover: { min: 0, max: 100 },
+            visibility: { min: 0, max: 50000 },
+            uvIndex: { min: 0, max: 12 },
+            pm25: { min: 0, max: 500 },
+            dangerContext: { min: 0, max: 3 },
+            stormIndex: { min: 0, max: 12 },
+            instability: { min: 0, max: 60 }
         };
     }
 
@@ -57,7 +57,7 @@ class MeteorGuardAI {
             kernelInitializer: 'heNormal',
             kernelRegularizer: tf.regularizers.l2({ l2: 0.01 })
         }));
-        this.model.add(tf.layers.leakyRelu({alpha: 0.2}));
+        this.model.add(tf.layers.leakyReLU({ alpha: 0.2 }));
         this.model.add(tf.layers.dropout({ rate: 0.2 }));
 
         // 2ª camada oculta (16 neurônios)
@@ -66,7 +66,7 @@ class MeteorGuardAI {
             kernelInitializer: 'heNormal',
             kernelRegularizer: tf.regularizers.l2({ l2: 0.01 })
         }));
-        this.model.add(tf.layers.leakyRelu({alpha: 0.1}));
+        this.model.add(tf.layers.leakyReLU({ alpha: 0.1 }));
         this.model.add(tf.layers.dropout({ rate: 0.1 }));
 
         // 3ª camada oculta (8 neurônios)
@@ -74,7 +74,7 @@ class MeteorGuardAI {
             units: 8,
             kernelInitializer: 'heNormal'
         }));
-        this.model.add(tf.layers.leakyRelu({alpha: 0.1}));
+        this.model.add(tf.layers.leakyRelu({ alpha: 0.1 }));
 
         // Camada de saída (1 neurônio - probabilidade de risco 0 a 1)
         this.model.add(tf.layers.dense({
@@ -194,7 +194,7 @@ class MeteorGuardAI {
                 this.rand(930, 980),
                 100,
                 this.rand(10, 400),
-                isHeatwave ? this.rand(10, 15) : 0, 
+                isHeatwave ? this.rand(10, 15) : 0,
                 this.rand(150, 500),
                 3,
                 Math.log1p(this.rand(3000, 50000)),
@@ -308,17 +308,17 @@ class MeteorGuardAI {
 
         // Normalizar
         const normalized = this.normalizeInput(inputVector);
-        
+
         // Predição (assíncrona para não bloquear UI)
         const tensor = tf.tensor2d([normalized]);
         const predTensor = this.model.predict(tensor);
         const riskData = await predTensor.data();
         const rawRisk = riskData[0];
-        
+
         // Calibração Híbrida: mistura IA Neural (80%) + Heurística (20%) para robustez
         const heuristicScore = this.quickHeuristic(data);
         const riskScore = Math.min(1.0, Math.max(0.0, rawRisk * 0.8 + heuristicScore * 0.2));
-        
+
         tensor.dispose();
         predTensor.dispose();
 
@@ -330,10 +330,10 @@ class MeteorGuardAI {
     // ==========================================
     interpretPrediction(riskScore, data) {
         const percentage = Math.round(riskScore * 100);
-        
+
         // Build Contextual Analysis
         const analysis = this.generateDetailedAnalysis(riskScore, data);
-        
+
         let level, title, icon, color;
 
         // Fetch translations for i18n dynamic string UI logic
@@ -471,9 +471,9 @@ class MeteorGuardAI {
 
         // Filtrar sugestões inconsistentes (Céu nublado != Lindo dia para ar livre)
         if (data.cloudCover > 85) {
-            suggestions = suggestions.filter(s => 
-                !s.toLowerCase().includes('o ar livre') && 
-                !s.toLowerCase().includes('outdoor') && 
+            suggestions = suggestions.filter(s =>
+                !s.toLowerCase().includes('o ar livre') &&
+                !s.toLowerCase().includes('outdoor') &&
                 !s.toLowerCase().includes('al aire libre')
             );
         }
@@ -491,8 +491,8 @@ class MeteorGuardAI {
     // ==========================================
     fallbackPrediction(data) {
         const oldLogic = AILogicService.analyzeRisk(
-            data.windSpeed || 0, 
-            data.precipitation || 0, 
+            data.windSpeed || 0,
+            data.precipitation || 0,
             data.weatherCode || 0
         );
         return {
@@ -521,17 +521,17 @@ class MeteorGuardAI {
         let intro;
         const hasUVRisk = (data.uvIndex || 0) >= 8;
         const hasAirRisk = (data.pm25 || 0) > 55;
-        
+
         if (riskScore < 0.2 && (hasUVRisk || hasAirRisk)) {
             // Clima estável MAS com risco ambiental — evita contradição
             const lang = i18n.current;
             if (hasUVRisk) {
                 intro = lang === 'en' ? 'Stable weather, but high solar exposure risk.' :
-                        lang === 'es' ? 'Clima estable, pero con riesgo elevado de exposición solar.' :
+                    lang === 'es' ? 'Clima estable, pero con riesgo elevado de exposición solar.' :
                         'Clima estável, porém com risco elevado de exposição solar.';
             } else {
                 intro = lang === 'en' ? 'Stable weather, but air quality deserves attention.' :
-                        lang === 'es' ? 'Clima estable, pero la calidad del aire merece atención.' :
+                    lang === 'es' ? 'Clima estable, pero la calidad del aire merece atención.' :
                         'Clima estável, porém a qualidade do ar merece atenção.';
             }
         } else if (riskScore < 0.2) {
@@ -545,7 +545,7 @@ class MeteorGuardAI {
         }
 
         let text = intro + ' ';
-        
+
         // Usar fatos traduzidos já gerados pela análise contextual
         const availableFacts = [];
         if (analysis) {
@@ -553,22 +553,22 @@ class MeteorGuardAI {
             availableFacts.push(...analysis.details);
             availableFacts.push(...analysis.suggestions);
         }
-        
+
         // Remove emoji prefix for better flow in paragraph
         const cleanFact = (str) => str.replace(/^[^\w\s]+\s*/, '').trim();
 
         const factsToUse = availableFacts.slice(0, 3);
-        
+
         if (factsToUse.length >= 1) {
             const first = cleanFact(factsToUse[0]);
             text += first.charAt(0).toUpperCase() + first.slice(1) + (first.endsWith('.') ? ' ' : '. ');
         }
-        
+
         if (factsToUse.length >= 2) {
             const second = cleanFact(factsToUse[1]);
             text += ctx.nlgAlso + ' ' + second.charAt(0).toLowerCase() + second.slice(1) + (second.endsWith('.') ? ' ' : '. ');
         }
-        
+
         if (factsToUse.length >= 3) {
             const third = cleanFact(factsToUse[2]);
             text += ctx.nlgFinally + ' ' + third.charAt(0).toLowerCase() + third.slice(1) + (third.endsWith('.') ? ' ' : '. ');
