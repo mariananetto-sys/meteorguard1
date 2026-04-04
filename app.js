@@ -219,34 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.riskIcon.className = `fa-solid ${prediction.icon}`;
         DOM.riskTitle.textContent = prediction.title;
 
-        // Call REAL Gemini AI for the text
-        DOM.riskMessage.textContent = '';
-        DOM.riskMessage.classList.add('typing');
-        
-        try {
-            const response = await fetch('/api/ai', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...aiInput,
-                    feelsLike: current.feelsLike,
-                    weatherDescription: interpretation.desc,
-                    riskPercentage: prediction.percentage
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                typewriterEffect(DOM.riskMessage, data.analysis, 20);
-            } else {
-                throw new Error('API indisponível');
-            }
-        } catch (err) {
-            // Fallback: usar gerador local
-            console.warn('[METEORGUARD AI] Gemini indisponível, usando análise local:', err);
-            const localMessage = generateAIMessage(prediction, aiInput);
-            typewriterEffect(DOM.riskMessage, localMessage, 25);
-        }
+        // IA gera o texto original usando o motor NLG
+        const aiText = meteorGuardAI.generateText(aiInput, prediction.riskScore);
+        typewriterEffect(DOM.riskMessage, aiText, 18);
 
         // Render detailed analysis (from neural network)
         renderAIAnalysis(prediction.analysis);

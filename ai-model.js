@@ -419,6 +419,280 @@ class MeteorGuardAI {
     }
 
     // ==========================================
+    // MOTOR NLG — Geração de Texto Original
+    // A IA compõe frases únicas analisando dados
+    // ==========================================
+    generateText(data, riskScore) {
+        const percentage = Math.round(riskScore * 100);
+        const observations = [];
+
+        // --- FASE 1: Analisar cada sensor e gerar observações com peso ---
+
+        // Temperatura
+        const temp = data.temperature || 20;
+        if (temp > 38) {
+            observations.push({ weight: 9, text: this.pick([
+                `A temperatura atingiu ${temp.toFixed(1)}°C, um nível considerado perigoso para a saúde humana`,
+                `Registrei ${temp.toFixed(1)}°C nos sensores — estamos em uma zona de calor extremo`,
+                `Com ${temp.toFixed(1)}°C, o risco de desidratação e insolação é real`
+            ])});
+        } else if (temp > 32) {
+            observations.push({ weight: 5, text: this.pick([
+                `a temperatura está em ${temp.toFixed(1)}°C, acima da média de conforto`,
+                `os sensores registram ${temp.toFixed(1)}°C de temperatura ambiente`,
+                `o termômetro marca ${temp.toFixed(1)}°C neste momento`
+            ])});
+        } else if (temp < 5) {
+            observations.push({ weight: 8, text: this.pick([
+                `A temperatura despencou para ${temp.toFixed(1)}°C — condições de frio intenso`,
+                `Com apenas ${temp.toFixed(1)}°C, exposição prolongada pode causar hipotermia`
+            ])});
+        } else if (temp < 15) {
+            observations.push({ weight: 4, text: this.pick([
+                `a temperatura está em ${temp.toFixed(1)}°C, relativamente fria`,
+                `os sensores indicam ${temp.toFixed(1)}°C — recomendo agasalho`
+            ])});
+        } else {
+            observations.push({ weight: 2, text: this.pick([
+                `a temperatura está em ${temp.toFixed(1)}°C, dentro da faixa de conforto`,
+                `registrei ${temp.toFixed(1)}°C, temperatura agradável`,
+                `os sensores marcam ${temp.toFixed(1)}°C no momento`
+            ])});
+        }
+
+        // Umidade
+        const hum = data.humidity || 50;
+        if (hum > 90) {
+            observations.push({ weight: 6, text: this.pick([
+                `a umidade relativa está em ${hum}%, próximo da saturação total do ar`,
+                `com ${hum}% de umidade, o ar está extremamente pesado e abafado`
+            ])});
+        } else if (hum < 30) {
+            observations.push({ weight: 6, text: this.pick([
+                `a umidade relativa caiu para ${hum}%, um nível preocupante para o sistema respiratório`,
+                `com apenas ${hum}% de umidade, o ar está muito seco`
+            ])});
+        } else {
+            observations.push({ weight: 1, text: this.pick([
+                `umidade em ${hum}%`,
+                `a umidade está estável em ${hum}%`
+            ])});
+        }
+
+        // Vento
+        const wind = data.windSpeed || 0;
+        const gusts = data.windGusts || 0;
+        if (gusts > 90) {
+            observations.push({ weight: 10, text: this.pick([
+                `Rajadas de vento atingiram ${gusts.toFixed(1)} km/h — ventos destrutivos que podem derrubar árvores e destelhamentos`,
+                `ALERTA: rajadas de ${gusts.toFixed(1)} km/h detectadas, equivalente à intensidade de uma tempestade tropical`
+            ])});
+        } else if (wind > 50) {
+            observations.push({ weight: 8, text: this.pick([
+                `ventos fortes de ${wind.toFixed(1)} km/h com rajadas de ${gusts.toFixed(1)} km/h estão varrendo a região`,
+                `o anemômetro registra ${wind.toFixed(1)} km/h de vento sustentado — objetos leves podem ser arremessados`
+            ])});
+        } else if (wind > 25) {
+            observations.push({ weight: 4, text: this.pick([
+                `ventos moderados de ${wind.toFixed(1)} km/h sopram na região`,
+                `o vento está em ${wind.toFixed(1)} km/h, forte o suficiente para inverter guarda-chuvas`
+            ])});
+        } else {
+            observations.push({ weight: 1, text: this.pick([
+                `ventos calmos de ${wind.toFixed(1)} km/h`,
+                `o vento está brando em ${wind.toFixed(1)} km/h`
+            ])});
+        }
+
+        // Precipitação
+        const rain = data.precipitation || 0;
+        if (rain > 30) {
+            observations.push({ weight: 10, text: this.pick([
+                `A precipitação é de ${rain.toFixed(1)} mm/h — chuva torrencial com alto risco de alagamentos`,
+                `Chovendo ${rain.toFixed(1)} mm/h, nível que a Defesa Civil classifica como emergência`
+            ])});
+        } else if (rain > 10) {
+            observations.push({ weight: 7, text: this.pick([
+                `a chuva é intensa com ${rain.toFixed(1)} mm/h — bueiros podem transbordar em áreas urbanas`,
+                `precipitação de ${rain.toFixed(1)} mm/h detectada, classificada como chuva forte`
+            ])});
+        } else if (rain > 2) {
+            observations.push({ weight: 5, text: this.pick([
+                `está chovendo moderadamente (${rain.toFixed(1)} mm/h)`,
+                `a precipitação está em ${rain.toFixed(1)} mm/h — recomendo guarda-chuva`
+            ])});
+        } else if (rain > 0) {
+            observations.push({ weight: 3, text: this.pick([
+                `há uma garoa leve de ${rain.toFixed(1)} mm/h`,
+                `detectei precipitação fraca de ${rain.toFixed(1)} mm/h`
+            ])});
+        }
+
+        // Pressão
+        const pressure = data.pressureMsl || 1013;
+        if (pressure < 990) {
+            observations.push({ weight: 8, text: this.pick([
+                `A pressão atmosférica está em ${pressure.toFixed(0)} hPa, um indicador de formação ciclônica ou tempestade severa se aproximando`,
+                `Com ${pressure.toFixed(0)} hPa de pressão, meus algoritmos identificam instabilidade barométrica significativa`
+            ])});
+        } else if (pressure < 1005) {
+            observations.push({ weight: 4, text: this.pick([
+                `a pressão está em queda (${pressure.toFixed(0)} hPa), sinalizando possível piora nas próximas horas`,
+                `barômetro em ${pressure.toFixed(0)} hPa — tendência de instabilidade`
+            ])});
+        } else if (pressure > 1025) {
+            observations.push({ weight: 2, text: this.pick([
+                `a pressão atmosférica está alta e estável em ${pressure.toFixed(0)} hPa, bom sinal de tempo firme`,
+                `barômetro em ${pressure.toFixed(0)} hPa indica estabilidade atmosférica`
+            ])});
+        }
+
+        // Visibilidade
+        const vis = data.visibility || 20000;
+        if (vis < 500) {
+            observations.push({ weight: 9, text: this.pick([
+                `A visibilidade é crítica: apenas ${(vis / 1000).toFixed(1)} km. Neblina densa ou chuva forte comprometem completamente a visão`,
+                `Visibilidade em ${(vis / 1000).toFixed(1)} km — condições extremamente perigosas para motoristas`
+            ])});
+        } else if (vis < 3000) {
+            observations.push({ weight: 5, text: this.pick([
+                `a visibilidade está reduzida para ${(vis / 1000).toFixed(1)} km`,
+                `neblina reduz a visibilidade para ${(vis / 1000).toFixed(1)} km`
+            ])});
+        }
+
+        // UV
+        const uv = data.uvIndex || 0;
+        if (uv >= 11) {
+            observations.push({ weight: 7, text: this.pick([
+                `O índice UV está em ${uv.toFixed(1)}, nível extremo — queimaduras de pele em menos de 10 minutos sem proteção`,
+                `UV extremo de ${uv.toFixed(1)} detectado. Protetor solar FPS 50+ é obrigatório`
+            ])});
+        } else if (uv >= 8) {
+            observations.push({ weight: 5, text: this.pick([
+                `o índice UV está muito alto em ${uv.toFixed(1)} — protetor solar é essencial`,
+                `UV em ${uv.toFixed(1)}, nível considerado muito alto pela OMS`
+            ])});
+        }
+
+        // PM2.5
+        const pm = data.pm25 || 10;
+        if (pm > 150) {
+            observations.push({ weight: 8, text: this.pick([
+                `A qualidade do ar é péssima com PM2.5 em ${pm.toFixed(0)} µg/m³ — nocivo para todos, especialmente crianças e idosos`,
+                `Partículas finas PM2.5 em ${pm.toFixed(0)} µg/m³ — o ar é insalubre. Use máscara ao sair`
+            ])});
+        } else if (pm > 55) {
+            observations.push({ weight: 5, text: this.pick([
+                `a qualidade do ar está comprometida (PM2.5: ${pm.toFixed(0)} µg/m³)`,
+                `PM2.5 em ${pm.toFixed(0)} µg/m³ — ar insatisfatório para grupos sensíveis`
+            ])});
+        } else if (pm <= 25) {
+            observations.push({ weight: 1, text: this.pick([
+                `o ar está limpo com PM2.5 em ${pm.toFixed(0)} µg/m³`,
+                `qualidade do ar boa (PM2.5: ${pm.toFixed(0)} µg/m³)`
+            ])});
+        }
+
+        // Nuvens
+        const clouds = data.cloudCover || 0;
+        if (clouds > 90) {
+            observations.push({ weight: 2, text: this.pick([
+                `o céu está completamente encoberto (${clouds}% de cobertura)`,
+                `nuvens cobrem ${clouds}% do céu, sem previsão de aberturas de sol`
+            ])});
+        } else if (clouds < 15) {
+            observations.push({ weight: 1, text: this.pick([
+                `o céu está limpo com apenas ${clouds}% de nuvens`,
+                `praticamente sem nuvens no céu (${clouds}%)`
+            ])});
+        }
+
+        // --- FASE 2: Ordenar por peso (relevância) ---
+        observations.sort((a, b) => b.weight - a.weight);
+
+        // --- FASE 3: Compor o texto final ---
+        const topObs = observations.slice(0, 3); // Pegar as 3 mais relevantes
+
+        // Introdução baseada no risco
+        let intro;
+        if (riskScore < 0.2) {
+            intro = this.pick([
+                'Concluí minha varredura dos sensores ambientais.',
+                'Análise dos 11 parâmetros atmosféricos finalizada.',
+                'Processamento dos dados meteorológicos concluído.',
+                'Minha rede neural processou todos os indicadores disponíveis.'
+            ]);
+        } else if (riskScore < 0.4) {
+            intro = this.pick([
+                'Identifiquei alguns pontos de atenção na minha análise.',
+                'Meus sensores detectaram condições que merecem monitoramento.',
+                'A varredura revelou parâmetros fora da zona ideal.'
+            ]);
+        } else if (riskScore < 0.65) {
+            intro = this.pick([
+                'Atenção. Minha análise identificou condições meteorológicas adversas.',
+                'Alerta moderado emitido após processamento dos dados ambientais.',
+                'Os dados analisados indicam deterioração significativa das condições.'
+            ]);
+        } else {
+            intro = this.pick([
+                'ALERTA CRÍTICO. Múltiplos sensores estão em zona de perigo.',
+                'ATENÇÃO MÁXIMA. A análise neural indica risco elevado para a região.',
+                'EMERGÊNCIA DETECTADA. Os parâmetros ambientais estão em níveis críticos.'
+            ]);
+        }
+
+        // Conectores para unir observações
+        const connectors = [' Além disso, ', ' Também observo que ', ' Adicionalmente, ', ' Complementando, '];
+
+        // Montar o parágrafo
+        let text = intro + ' ';
+        
+        if (topObs.length >= 1) {
+            // Capitalizar primeira observação
+            const first = topObs[0].text;
+            text += first.charAt(0).toUpperCase() + first.slice(1) + '.';
+        }
+        
+        if (topObs.length >= 2) {
+            text += this.pick(connectors) + topObs[1].text + '.';
+        }
+        
+        if (topObs.length >= 3) {
+            text += ' ' + this.pick(['Por fim, ', 'Quanto ao restante, ', 'Nos demais indicadores, ', '']) + topObs[2].text + '.';
+        }
+
+        // Conclusão baseada no risco
+        if (riskScore < 0.2) {
+            text += this.pick([
+                ` Conclusão: risco calculado em ${percentage}%. Condições favoráveis.`,
+                ` Meu veredito: ${percentage}% de risco. Aproveite o dia com tranquilidade.`,
+                ` Resultado da análise neural: ${percentage}% de probabilidade de risco. Tudo dentro da normalidade.`
+            ]);
+        } else if (riskScore < 0.65) {
+            text += this.pick([
+                ` Risco avaliado em ${percentage}%. Tome precauções.`,
+                ` Minha rede neural calcula ${percentage}% de risco. Fique atento.`,
+                ` Probabilidade de risco: ${percentage}%. Monitore as condições nas próximas horas.`
+            ]);
+        } else {
+            text += this.pick([
+                ` Risco avaliado em ${percentage}%. Procure abrigo seguro imediatamente.`,
+                ` RISCO: ${percentage}%. Evite deslocamentos e permaneça em local seguro.`,
+                ` Probabilidade de evento adverso: ${percentage}%. Siga as orientações de segurança.`
+            ]);
+        }
+
+        return text;
+    }
+
+    // Escolhe um item aleatório de um array
+    pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    // ==========================================
     // Utilidades
     // ==========================================
     normalizeInput(inputVector) {
