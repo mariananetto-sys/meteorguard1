@@ -43,7 +43,8 @@ export default function handler(req, res) {
     // Algoritmo de Avaliação de Risco (Pipeline Backend Fast-Inference)
     let riskScore = 0.05; // Base safe
 
-    if (temperature > 38 || temperature < 0) riskScore += 0.2;
+    if (temperature >= 45 || temperature <= -15) riskScore += 0.85;
+    else if (temperature > 38 || temperature < 0) riskScore += 0.3;
     if (stormIndex > 500) riskScore += 0.4;
     else if (stormIndex > 200) riskScore += 0.2;
     
