@@ -481,27 +481,56 @@ class MeteorGuardAI {
     }
 
     async runLLM(query, data) {
-        const risk = this.computePhysicsLabel([data.temperature, data.humidity, data.windSpeed, data.windGusts, data.precipitation, data.pressureMsl, 0, 20000, 0, 10]);
+        // Fallbacks para garantir que nunca tenhamos 'undefined' no prompt
+        const cityName = data.name || 'sua localização';
+        const temp = data.temperature !== undefined ? Math.round(data.temperature) : '--';
+        const rain = data.precipitation !== undefined ? data.precipitation.toFixed(1) : '0';
+        const wind = data.windSpeed !== undefined ? Math.round(data.windSpeed) : '0';
+        
+        const risk = this.computePhysicsLabel([
+            data.temperature || 20, 
+            data.humidity || 50, 
+            data.windSpeed || 0, 
+            data.windGusts || 0, 
+            data.precipitation || 0, 
+            data.pressureMsl || 1013, 
+            0, 20000, 0, 10
+        ]);
         const riskLevel = this.getRiskTitle(risk);
         
-        // System context injection
-        const prompt = `System: Você é o MeteorGuard AI, um assistente de clima muito prestativo, direto e humano do Brasil.
-Contexto: Cidade: ${data.name}, Temp: ${data.temperature}°C, Chuva: ${data.precipitation}mm, Vento: ${data.windSpeed}km/h, Risco: ${riskLevel}.
-Regra: Responda de forma curta, natural e conversacional. Não use listas.
-User: ${query}
-AI:`;
+        // Prompt simplificado para LaMini-GPT (modelo pequeno = prompt direto)
+        const prompt = `Instrução: Você é o MeteorGuard AI, um assistente de clima humano do Brasil. Seja curto e gentil.
+Dados atuais em ${cityName}: Temp ${temp}°C, Chuva ${rain}mm, Vento ${wind}km/h, Risco ${riskLevel}.
+Pergunta do usuário: "${query}"
+Resposta curta:`;
 
         try {
             const out = await this.llmPipeline(prompt, {
-                max_new_tokens: 60,
-                temperature: 0.7,
-                repetition_penalty: 1.2,
-                do_sample: true
+                max_new_tokens: 50,
+                temperature: 0.6, // Reduzi um pouco para evitar "alucinação francesa"
+                repetition_penalty: 1.1,
+                do_sample: true,
+                top_k: 40
             });
             
-            let response = out[0].generated_text.split('AI:')[1] || "Estou processando isso...";
-            return response.trim();
+            let response = out[0].generated_text;
+            
+            // Limpeza agressiva do prompt se ele repetir as instruções
+            if (response.includes('Resposta curta:')) {
+                response = response.split('Resposta curta:')[1];
+            } else if (response.includes('AI:')) {
+                response = response.split('AI:')[1];
+            }
+            
+            // Se a resposta estiver vazia ou for muito curta, usa um fallback de contexto
+            response = response.trim();
+            if (response.length < 3 || response.toLowerCase() === 'no') {
+                return `Em ${cityName}, estamos com ${temp}°C e risco ${riskLevel.toLowerCase()}. Como posso te ajudar mais?`;
+            }
+
+            return response;
         } catch (e) {
+            console.error("AI Error:", e);
             return "Tive um pequeno lapso aqui no meu processamento local. O que você perguntou?";
         }
     }

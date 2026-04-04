@@ -1131,7 +1131,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // AI Section Title with icon
         const aiTitle = document.querySelector('.risk-panel .panel-header h3');
-        if (aiTitle) aiTitle.innerHTML = `<i class="fa-solid fa-sparkles neon-text-green pulse-glow"></i> ${i18n.t('aiTitle')}`;
+        if (aiTitle) aiTitle.innerHTML = `<i class="fa-solid fa-comments neon-text-green pulse-glow"></i> ${i18n.t('aiTitle')}`;
     }
 
     // -----------------------------------
@@ -1181,8 +1181,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // AI Response logic (Hybrid v5.3)
-            const aiResponse = await meteorGuardAI.askAI(query, lastWeatherData?.current || { 
-                temperature: 20, humidity: 50, windSpeed: 0, windGusts: 0, precipitation: 0, pressureMsl: 1013 
+            const aiResponse = await meteorGuardAI.askAI(query, { 
+                ...(lastWeatherData?.current || {}), 
+                name: currentCityInfo.name || 'sua localização'
             }, (p) => {
                 // Progress callback for LLM download
                 if (p.status === 'progress') {

@@ -37,7 +37,7 @@ const i18n = {
             aiEpoch: (e, t) => `Processando dados ${e}/${t}...`,
             aiLastAnalysis: 'Última análise da IA',
             currentRain: 'Precipitação Atual',
-            dailyRain: 'Previsão p/ Hoje',
+            dailyRain: 'Precipitação Total (Hoje)',
 
             riskSafe: 'Nível: Seguro',
             riskWarning: 'Atenção: Clima Adverso',
