@@ -8,7 +8,7 @@ class MeteorGuardAI {
         this.model = null;
         this.isReady = false;
         this.trainingLog = [];
-        this.modelKey = 'meteorguard-model-v2';
+        this.modelKey = 'meteorguard-model-v3';
         
         // Normalização dos inputs (min/max para cada feature)
         this.featureRanges = {
@@ -195,13 +195,13 @@ class MeteorGuardAI {
             const savedModel = await tf.loadLayersModel('localstorage://' + this.modelKey);
             this.model = savedModel;
             this.model.compile({
-                optimizer: tf.train.adam(0.001),
+                optimizer: tf.train.adam(0.005),
                 loss: 'binaryCrossentropy',
                 metrics: ['accuracy']
             });
             this.isReady = true;
             console.log('[METEORGUARD AI] ⚡ Modelo carregado do cache! Treinamento pulado.');
-            if (onProgress) onProgress(60, 60, { loss: 0, accuracy: 1 });
+            if (onProgress) onProgress(15, 15, { loss: 0, accuracy: 1 });
             return;
         } catch (e) {
             console.log('[METEORGUARD AI] Nenhum modelo salvo. Iniciando treinamento...');
@@ -213,7 +213,7 @@ class MeteorGuardAI {
         const inputs = tf.tensor2d(trainData.inputs.map(row => this.normalizeInput(row)));
         const outputs = tf.tensor2d(trainData.outputs);
 
-        const epochs = 60;
+        const epochs = 15;
         
         // Early Stopping implementation para prevenir overfitting
         const callbacks = {

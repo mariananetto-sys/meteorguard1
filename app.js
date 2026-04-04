@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Current city state for favorites
     let currentCityInfo = { lat: 0, lon: 0, name: '', country: '' };
     let lastDailyData = null; // Store for modal re-use
+    let isAIBooting = false;
 
     // Modal DOM
     const modalDOM = {
@@ -113,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // AI Neural Network Boot
     // -----------------------------------
     async function bootAI() {
+        isAIBooting = true;
         console.log('[METEORGUARD] Inicializando motor de IA...');
         
         // Build the model architecture
@@ -128,8 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Training complete! Update UI
+        isAIBooting = false;
         DOM.aiTrainingBox.style.display = 'none';
-        DOM.aiBadge.textContent = 'ONLINE';
+        DOM.aiBadge.textContent = i18n.t('aiOnline') || 'PRONTO!';
         DOM.aiBadge.classList.add('active');
 
         console.log('[METEORGUARD] ✅ IA Neural operacional!');
@@ -257,6 +260,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // AI Analysis Engine
     // -----------------------------------
     async function runAIAnalysis(weatherData) {
+        if (isAIBooting) {
+            console.log('[METEORGUARD] Securando análise pendente: IA ainda em treinamento...');
+            return;
+        }
+
         const current = weatherData.current;
         const interpretation = WeatherService.getWeatherInterpretation(current.weatherCode);
 
