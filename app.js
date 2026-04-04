@@ -307,8 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
             weatherCode: current.weatherCode
         };
 
-        // Get neural network risk prediction
-        const prediction = await meteorGuardAI.predict(aiInput);
+        // Get neural network risk prediction (Pass historic data for Physics Momentum)
+        const prediction = await meteorGuardAI.predict(aiInput, lastWeatherData);
 
         // Update Risk Indicator
         DOM.riskIndicator.className = `risk-indicator ${prediction.level} transition-all`;

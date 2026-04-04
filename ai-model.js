@@ -1,14 +1,14 @@
 /**
  * @class MeteorGuardAI
- * @version 3.0
- * @description Motor de Inteligência Artificial Local (TensorFlow.js) para análise de riscos climáticos.
+ * @version 3.1 Pro
+ * @description Motor de Inteligência Artificial Local (TensorFlow.js) com Análise de Momentum Físico.
  */
 class MeteorGuardAI {
     constructor() {
         this.model = null;
         this.isReady = false;
         this.trainingLog = [];
-        this.modelKey = 'meteorguard-model-v3.0';
+        this.modelKey = 'meteorguard-model-v3.1-pro';
 
         // Mulberry32 PRNG — muito melhor que LCG para datasets de treino
         this._prngState = 42;
@@ -349,9 +349,9 @@ class MeteorGuardAI {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // PREDIÇÃO
+    // PREDIÇÃO — v3.1 Pro: Análise de Momentum Híbrida
     // ══════════════════════════════════════════════════════════════════════
-    async predict(data) {
+    async predict(data, previous = null) {
         if (!this.model) return this.fallbackPrediction(data);
 
         const humidity = data.humidity || 50, pressureMsl = data.pressureMsl || 1013, windSpeed = data.windSpeed || 0, temp = data.temperature || 20, precip = data.precipitation || 0;
@@ -362,29 +362,55 @@ class MeteorGuardAI {
         const tensor = tf.tensor2d([normalized]);
         const predTensor = this.model.predict(tensor);
         const riskData = await predTensor.data();
-        const rawRisk = riskData[0];
+        let rawRisk = riskData[0];
 
         tensor.dispose(); predTensor.dispose();
+
+        // ── Nudging Físico (v3.1 Pro Simulation) ──────────────────────────
+        let momentumSafetyBias = 0;
+        if (previous && previous.current) {
+            const prev = previous.current;
+            const deltaP = (pressureMsl - (prev.pressureMsl || 1013));
+            
+            // Simulação de tendência barométrica (Clássico na física)
+            if (deltaP < -0.8) {
+                // Pressão caindo rápido: Aumenta risco (instabilidade chegando)
+                momentumSafetyBias += Math.min(0.20, Math.abs(deltaP) * 0.1);
+                console.log(`[METEORGUARD PRO] Physics: Tendência barométrica negativa detectada (${deltaP.toFixed(1)} hPa).`);
+            } else if (deltaP > 0.8) {
+                // Pressão subindo rápido: Reduz risco (tempo estabilizando)
+                momentumSafetyBias -= Math.min(0.15, deltaP * 0.05);
+            }
+
+            // Delta Temperatura (Frentes térmicas)
+            const deltaT = temp - (prev.temp || temp);
+            if (Math.abs(deltaT) > 3) momentumSafetyBias += 0.05; 
+        }
 
         const certainty = Math.abs(rawRisk - 0.5) * 2;
         const nnWeight = 0.50 + certainty * 0.40;
         const hWeight = 1 - nnWeight;
         const heuristicScore = this.quickHeuristic(data);
-        const riskScore = Math.min(1.0, Math.max(0.0, rawRisk * nnWeight + heuristicScore * hWeight));
+        
+        // Fusão final: NN + Heurística + Bias Físico de Momentum
+        const riskScore = Math.min(1.0, Math.max(0.0, (rawRisk * nnWeight + heuristicScore * hWeight) + momentumSafetyBias));
 
-        return this.interpretPrediction(riskScore, data);
+        return this.interpretPrediction(riskScore, data, momentumSafetyBias);
     }
 
-    interpretPrediction(riskScore, data) {
+    interpretPrediction(riskScore, data, physicsBias = 0) {
         const percentage = Math.round(riskScore * 100);
         const analysis = this.generateDetailedAnalysis(riskScore, data);
         let level, title, icon, color;
+        
+        // Títulos PRO baseados na física (Traduzidos)
+        const suffix = physicsBias > 0.05 ? i18n.t('physicsUnstable') : physicsBias < -0.05 ? i18n.t('physicsStable') : '';
 
-        if (riskScore < 0.2) { level = 'safe'; title = i18n.t('aiRiskTitleSafe')(percentage); icon = 'fa-shield-check'; color = '#00ff88'; }
-        else if (riskScore < 0.4) { level = 'low-warning'; title = i18n.t('aiRiskTitleWarningLow')(percentage); icon = 'fa-umbrella'; color = '#ffdf00'; }
-        else if (riskScore < 0.65) { level = 'warning'; title = i18n.t('aiRiskTitleWarning')(percentage); icon = 'fa-circle-exclamation'; color = '#ff8800'; }
-        else if (riskScore < 0.85) { level = 'danger'; title = i18n.t('aiRiskTitleDanger')(percentage); icon = 'fa-triangle-exclamation'; color = '#ff3366'; }
-        else { level = 'critical'; title = i18n.t('aiRiskTitleCritical')(percentage); icon = 'fa-skull-crossbones'; color = '#ff0040'; }
+        if (riskScore < 0.2) { level = 'safe'; title = i18n.t('aiRiskTitleSafe')(percentage) + suffix; icon = 'fa-shield-check'; color = '#00ff88'; }
+        else if (riskScore < 0.4) { level = 'low-warning'; title = i18n.t('aiRiskTitleWarningLow')(percentage) + suffix; icon = 'fa-umbrella'; color = '#ffdf00'; }
+        else if (riskScore < 0.65) { level = 'warning'; title = i18n.t('aiRiskTitleWarning')(percentage) + suffix; icon = 'fa-circle-exclamation'; color = '#ff8800'; }
+        else if (riskScore < 0.85) { level = 'danger'; title = i18n.t('aiRiskTitleDanger')(percentage) + suffix; icon = 'fa-triangle-exclamation'; color = '#ff3366'; }
+        else { level = 'critical'; title = i18n.t('aiRiskTitleCritical')(percentage) + suffix; icon = 'fa-skull-crossbones'; color = '#ff0040'; }
 
         const locale = i18n.current === 'en' ? 'en-US' : i18n.current === 'es' ? 'es-ES' : 'pt-BR';
         return { riskScore, percentage, level, title, icon, color, analysis, timestamp: new Date().toLocaleTimeString(locale) };

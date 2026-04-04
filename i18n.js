@@ -49,6 +49,8 @@ const i18n = {
             aiRiskTitleWarning: (v) => `🟠 ATENÇÃO — Risco ${v}%`,
             aiRiskTitleDanger: (v) => `🔴 PERIGO — Risco ${v}%`,
             aiRiskTitleCritical: (v) => `🚨 RISCO EXTREMO — Risco ${v}%`,
+            physicsUnstable: ' (TENDÊNCIA INSTÁVEL)',
+            physicsStable: ' (ESTABILIZANDO)',
 
             // Alerts
             alertsTitle: 'ALERTAS METEOROLÓGICOS ATIVOS',
@@ -217,6 +219,8 @@ const i18n = {
             aiRiskTitleWarning: (v) => `🟠 WARNING — Risk ${v}%`,
             aiRiskTitleDanger: (v) => `🔴 DANGER — Risk ${v}%`,
             aiRiskTitleCritical: (v) => `🚨 EXTREME RISK — Risk ${v}%`,
+            physicsUnstable: ' (UNSTABLE TREND)',
+            physicsStable: ' (STABILIZING)',
 
             alertsTitle: 'ACTIVE WEATHER ALERTS',
             govAlertTitle: 'EXTREME GOVERNMENT ALERT',
@@ -377,6 +381,8 @@ const i18n = {
             aiRiskTitleWarning: (v) => `🟠 ATENCIÓN — Riesgo ${v}%`,
             aiRiskTitleDanger: (v) => `🔴 PELIGRO — Riesgo ${v}%`,
             aiRiskTitleCritical: (v) => `🚨 RIESGO EXTREMO — Riesgo ${v}%`,
+            physicsUnstable: ' (TENDENCIA INESTABLE)',
+            physicsStable: ' (ESTABILIZANDO)',
 
             alertsTitle: 'ALERTAS METEOROLÓGICAS ACTIVAS',
             govAlertTitle: 'ALERTA GUBERNAMENTAL EXTREMA',
