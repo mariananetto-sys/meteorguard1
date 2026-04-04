@@ -241,22 +241,19 @@ class MeteorGuardAI {
         const outputs = tf.tensor2d(trainData.outputs);
 
         const epochs = 60;
-        const callbacks = [
-            tf.callbacks.earlyStopping({
-                monitor: 'val_loss',
-                patience: 6,
-                minDelta: 0.0001
-            }),
-            {
-                onEpochEnd: (epoch, logs) => {
-                    if (onProgress) onProgress(epoch + 1, epochs, logs.loss, logs.mse);
+        
+        // Usando um único objeto de callback para evitar incompatibilidades de Array no TFJS 4.x
+        const callbacks = {
+            onEpochEnd: (epoch, logs) => {
+                if (onProgress) {
+                    onProgress(epoch + 1, epochs, logs);
                 }
             }
-        ];
+        };
 
         await this.model.fit(inputs, outputs, {
             epochs: epochs,
-            batchSize: 48, // Batch maior p/ estabilidade com L2
+            batchSize: 48,
             validationSplit: 0.15,
             shuffle: true,
             callbacks: callbacks
