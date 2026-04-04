@@ -277,7 +277,7 @@ section {
 }
 
 .top-section {
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-columns: 1fr 1fr;
 }
 
 .middle-section {
@@ -542,6 +542,22 @@ section {
     font-size: 0.85rem;
 }
 
+/* AI Typing cursor */
+.ai-typing {
+    min-height: 1.5em;
+}
+.ai-typing.typing::after {
+    content: '▌';
+    color: var(--neon-green);
+    animation: cursorBlink 0.7s step-end infinite;
+    margin-left: 2px;
+}
+
+@keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
 .rain-stats {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -661,9 +677,11 @@ section {
 .leaflet-container {
     background: #0a0e17 !important;
 }
-.leaflet-layer,
-.leaflet-control-zoom-in,
-.leaflet-control-zoom-out,
-.leaflet-control-attribution {
-    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+.leaflet-control-zoom a {
+    background: rgba(16, 23, 41, 0.8) !important;
+    color: var(--neon-blue) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+}
+.leaflet-control-zoom a:hover {
+    background: rgba(0, 240, 255, 0.15) !important;
 }

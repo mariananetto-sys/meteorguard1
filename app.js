@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Training complete! Update UI
         DOM.aiTrainingBox.style.display = 'none';
-        DOM.aiBadge.textContent = 'IA ATIVA';
+        DOM.aiBadge.textContent = 'ONLINE';
         DOM.aiBadge.classList.add('active');
 
         console.log('[METEORGUARD] ✅ IA Neural operacional!');
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     // AI Analysis Engine
     // -----------------------------------
-    function runAIAnalysis(weatherData) {
+    async function runAIAnalysis(weatherData) {
         const current = weatherData.current;
         const interpretation = WeatherService.getWeatherInterpretation(current.weatherCode);
 
@@ -211,16 +211,44 @@ document.addEventListener('DOMContentLoaded', () => {
             weatherCode: current.weatherCode
         };
 
-        // Get AI prediction
+        // Get neural network risk prediction
         const prediction = meteorGuardAI.predict(aiInput);
 
         // Update Risk Indicator
         DOM.riskIndicator.className = `risk-indicator ${prediction.level} transition-all`;
         DOM.riskIcon.className = `fa-solid ${prediction.icon}`;
         DOM.riskTitle.textContent = prediction.title;
-        DOM.riskMessage.textContent = `Probabilidade de risco calculada pela rede neural: ${prediction.percentage}%`;
 
-        // Render detailed analysis
+        // Call REAL Gemini AI for the text
+        DOM.riskMessage.textContent = '';
+        DOM.riskMessage.classList.add('typing');
+        
+        try {
+            const response = await fetch('/api/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...aiInput,
+                    feelsLike: current.feelsLike,
+                    weatherDescription: interpretation.desc,
+                    riskPercentage: prediction.percentage
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                typewriterEffect(DOM.riskMessage, data.analysis, 20);
+            } else {
+                throw new Error('API indisponível');
+            }
+        } catch (err) {
+            // Fallback: usar gerador local
+            console.warn('[METEORGUARD AI] Gemini indisponível, usando análise local:', err);
+            const localMessage = generateAIMessage(prediction, aiInput);
+            typewriterEffect(DOM.riskMessage, localMessage, 25);
+        }
+
+        // Render detailed analysis (from neural network)
         renderAIAnalysis(prediction.analysis);
 
         // Timestamp
@@ -357,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
             attributionControl: false
         }).setView([lat, lon], 10);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19
         }).addTo(currentMap);
         
@@ -506,5 +534,58 @@ document.addEventListener('DOMContentLoaded', () => {
             p.offsetHeight;
             p.style.animation = null; 
         });
+    }
+
+    // -----------------------------------
+    // Typewriter Effect
+    // -----------------------------------
+    let typewriterTimer = null;
+    function typewriterEffect(element, text, speed = 30) {
+        // Clear previous animation
+        if (typewriterTimer) clearInterval(typewriterTimer);
+        element.textContent = '';
+        element.classList.add('typing');
+
+        let index = 0;
+        typewriterTimer = setInterval(() => {
+            element.textContent += text.charAt(index);
+            index++;
+            if (index >= text.length) {
+                clearInterval(typewriterTimer);
+                typewriterTimer = null;
+                // Remove cursor after a short delay
+                setTimeout(() => element.classList.remove('typing'), 1500);
+            }
+        }, speed);
+    }
+
+    // -----------------------------------
+    // AI Message Generator
+    // -----------------------------------
+    function generateAIMessage(prediction, data) {
+        const messages = {
+            safe: [
+                `Analisei ${Math.round(data.humidity)}% de umidade, ventos de ${data.windSpeed?.toFixed(1)} km/h e pressão de ${data.pressureMsl?.toFixed(0)} hPa. Tudo dentro dos padrões seguros. Probabilidade de risco: ${prediction.percentage}%.`,
+                `Varredura concluída. Atmosfera estável com visibilidade de ${(data.visibility / 1000).toFixed(1)} km. Nenhuma anomalia detectada pelo radar neural. Risco: ${prediction.percentage}%.`,
+                `Processamento finalizado. Condições atmosféricas dentro da normalidade. Índice UV em ${data.uvIndex?.toFixed(1)} e qualidade do ar em PM2.5 ${data.pm25?.toFixed(0)} µg/m³. Probabilidade de risco: ${prediction.percentage}%.`
+            ],
+            'low-warning': [
+                `Detectei sinais de instabilidade leve. Umidade em ${Math.round(data.humidity)}% com precipitação de ${data.precipitation?.toFixed(1)} mm/h. Recomendo levar guarda-chuva por precaução. Risco calculado: ${prediction.percentage}%.`,
+                `Meus sensores indicam possibilidade de garoa. Pressão em ${data.pressureMsl?.toFixed(0)} hPa com tendência de queda. Fique atento às próximas horas. Risco: ${prediction.percentage}%.`
+            ],
+            warning: [
+                `Atenção. Identifiquei condições adversas: ventos de ${data.windSpeed?.toFixed(1)} km/h com rajadas de até ${data.windGusts?.toFixed(1)} km/h e precipitação de ${data.precipitation?.toFixed(1)} mm/h. Evite áreas de risco. Probabilidade: ${prediction.percentage}%.`,
+                `Alerta processado. A pressão caiu para ${data.pressureMsl?.toFixed(0)} hPa e a cobertura de nuvens está em ${data.cloudCover}%. Chuva moderada a forte esperada. Risco: ${prediction.percentage}%.`
+            ],
+            danger: [
+                `ALERTA CRÍTICO. Minha rede neural detectou condições severas: ventos de ${data.windSpeed?.toFixed(1)} km/h, precipitação intensa de ${data.precipitation?.toFixed(1)} mm/h e pressão em ${data.pressureMsl?.toFixed(0)} hPa. Permaneça em local seguro. Risco: ${prediction.percentage}%.`,
+            ],
+            critical: [
+                `EMERGÊNCIA. Todos os 11 indicadores ambientais apontam para risco extremo. Ventos destrutivos de ${data.windSpeed?.toFixed(1)} km/h, chuva torrencial e visibilidade quase zero (${(data.visibility / 1000).toFixed(1)} km). NÃO SAIA DE CASA. Risco calculado: ${prediction.percentage}%.`,
+            ]
+        };
+
+        const pool = messages[prediction.level] || messages.safe;
+        return pool[Math.floor(Math.random() * pool.length)];
     }
 });
