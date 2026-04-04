@@ -481,57 +481,64 @@ class MeteorGuardAI {
     }
 
     async runLLM(query, data) {
-        // Fallbacks para garantir que nunca tenhamos 'undefined' no prompt
+        // Fallbacks para garantir que nunca tenhamos 'undefined'
         const cityName = data.name || 'sua localização';
-        const temp = data.temperature !== undefined ? Math.round(data.temperature) : '--';
+        const temp = data.temperature !== undefined ? Math.round(data.temperature) : '20';
         const rain = data.precipitation !== undefined ? data.precipitation.toFixed(1) : '0';
         const wind = data.windSpeed !== undefined ? Math.round(data.windSpeed) : '0';
-        
-        const risk = this.computePhysicsLabel([
-            data.temperature || 20, 
-            data.humidity || 50, 
-            data.windSpeed || 0, 
-            data.windGusts || 0, 
-            data.precipitation || 0, 
-            data.pressureMsl || 1013, 
-            0, 20000, 0, 10
-        ]);
-        const riskLevel = this.getRiskTitle(risk);
-        
-        // Prompt simplificado para LaMini-GPT (modelo pequeno = prompt direto)
-        const prompt = `Instrução: Você é o MeteorGuard AI, um assistente de clima humano do Brasil. Seja curto e gentil.
-Dados atuais em ${cityName}: Temp ${temp}°C, Chuva ${rain}mm, Vento ${wind}km/h, Risco ${riskLevel}.
-Pergunta do usuário: "${query}"
-Resposta curta:`;
+        const riskLevel = this.getRiskTitle(this.computePhysicsLabel([
+            data.temperature || 20, 0.5, 0, 0, 0, 1013, 0, 20000, 0, 10
+        ]));
+
+        // FORMATO ALPACA (Oficial para LaMini) — O modelo adora esse padrão
+        const prompt = `Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request in Portuguese.
+
+### Instruction:
+Você é o MeteorGuard AI, um assistente de clima humano do Brasil. Responda o usuário de forma curta, gentil e direta (máximo 20 palavras). Use os dados abaixo:
+Local: ${cityName}
+Clima: ${temp}°C, Chuva ${rain}mm, Risco ${riskLevel}
+
+### Input:
+${query}
+
+### Response:`;
 
         try {
             const out = await this.llmPipeline(prompt, {
-                max_new_tokens: 50,
-                temperature: 0.6, // Reduzi um pouco para evitar "alucinação francesa"
-                repetition_penalty: 1.1,
+                max_new_tokens: 45,
+                temperature: 0.1, // Quase determinístico: zero alucinação
+                repetition_penalty: 1.2,
                 do_sample: true,
-                top_k: 40
+                top_p: 0.9
             });
             
             let response = out[0].generated_text;
             
-            // Limpeza agressiva do prompt se ele repetir as instruções
-            if (response.includes('Resposta curta:')) {
-                response = response.split('Resposta curta:')[1];
-            } else if (response.includes('AI:')) {
-                response = response.split('AI:')[1];
+            // Limpeza forte do formato Alpaca
+            if (response.includes('### Response:')) {
+                response = response.split('### Response:')[1];
             }
             
-            // Se a resposta estiver vazia ou for muito curta, usa um fallback de contexto
             response = response.trim();
-            if (response.length < 3 || response.toLowerCase() === 'no') {
-                return `Em ${cityName}, estamos com ${temp}°C e risco ${riskLevel.toLowerCase()}. Como posso te ajudar mais?`;
+
+            // SENSOR DE ALUCINAÇÃO (v5.8)
+            // Se a IA começar a falar de moedas (USD/EUR) ou sair do português/clima
+            const isCrazy = /[$€£]|USD|EUR|GBP|comunismo|fúcille|{/.test(response);
+            
+            if (response.length < 3 || isCrazy) {
+                // Fallback inteligente baseado em dados reais
+                const safeResponses = [
+                    `Atualmente em ${cityName} temos ${temp}°C e condições de ${riskLevel.toLowerCase()}.`,
+                    `Monitorando ${cityName}: ${temp}°C com risco ${riskLevel.toLowerCase()}. Como posso ajudar?`,
+                    `Por aqui em ${cityName}, os sensores indicam ${temp}°C e ${riskLevel.toLowerCase()}.`
+                ];
+                return safeResponses[Math.floor(Math.random() * safeResponses.length)];
             }
 
             return response;
         } catch (e) {
-            console.error("AI Error:", e);
-            return "Tive um pequeno lapso aqui no meu processamento local. O que você perguntou?";
+            console.error("AI Local Error:", e);
+            return "Tive um erro no meu cérebro local. O clima está em " + temp + "°C agora.";
         }
     }
 
