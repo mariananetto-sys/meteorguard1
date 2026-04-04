@@ -62,10 +62,10 @@ class MeteorGuardAI {
             activation: 'sigmoid'
         }));
 
-        // Compilar o modelo com otimizador Adam
+        // Compilar o modelo com otimizador Adam (lr=0.001 para estabilidade)
         this.model.compile({
-            optimizer: tf.train.adam(0.01),
-            loss: 'binaryCrossentropy',
+            optimizer: tf.train.adam(0.001),
+            loss: 'meanSquaredError',
             metrics: ['accuracy']
         });
 
@@ -188,22 +188,24 @@ class MeteorGuardAI {
         const xs = tf.tensor2d(normalizedInputs);
         const ys = tf.tensor2d(data.outputs);
 
-        // Treinar por 50 épocas
+        // Treinar por 60 épocas (lr menor = precisa de mais épocas)
         const history = await this.model.fit(xs, ys, {
-            epochs: 50,
+            epochs: 60,
             batchSize: 16,
             validationSplit: 0.2,
             shuffle: true,
             callbacks: {
-                onEpochEnd: (epoch, logs) => {
+                onEpochEnd: async (epoch, logs) => {
                     this.trainingLog.push({
                         epoch: epoch + 1,
                         loss: logs.loss.toFixed(4),
                         accuracy: (logs.acc * 100).toFixed(1)
                     });
                     if (onProgress) {
-                        onProgress(epoch + 1, 50, logs);
+                        onProgress(epoch + 1, 60, logs);
                     }
+                    // Libera a UI thread para não travar o navegador
+                    await tf.nextFrame();
                 }
             }
         });
