@@ -311,11 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
             weatherCode: current.weatherCode
         };
 
-        // v4.2 MAX: Self-Calibration Feedback Loop
-        // Before predicting the current state, we verify how the model performed on the LAST prediction
-        meteorGuardAI.recordActualOutcome(current);
-
-        // v4.2 MAX: Autonomous Input with Geographical & Spatial Context
+        // v5.0 MAX: Intelligent Autonomous Pipeline
         const lat = currentCityInfo.lat || -22.9068;
         const lon = currentCityInfo.lon || -43.1729;
         const alt = currentCityInfo.altitude || 500;
@@ -324,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const gradT = (Math.random() - 0.5) * 4; 
         const regionalState = (Math.abs(gradP) > 3 || Math.abs(gradT) > 3) ? 0.8 : 0.4;
 
-        // Autonomous v4.2 MAX prediction (91 features include deltas)
+        // Ultimate v5.0 MAX prediction (70 optimized features)
         const prediction = await meteorGuardAI.predict({
             ...aiInput,
             lat, lon, alt,
@@ -333,71 +329,51 @@ document.addEventListener('DOMContentLoaded', () => {
             regionalState
         });
 
-        // Update Trust & Regional Badges (Reflecting Auto-Calibration)
-        const trustPct = Math.round((prediction.trustWeight || 0.8) * 100);
-        DOM.aiTrustBadge.innerHTML = `<i class="fa-solid fa-microchip"></i> Trust (Auto-Calib): ${trustPct}%`;
+        // Update Trust & Regional Badges (with Anomaly Detection)
+        const trustPct = Math.round((prediction.trustWeight || 0.75) * 100);
+        const anomalyAlert = prediction.anomalyScore > 0.6 ? ' ⚠️ ANOMALIA' : '';
+        DOM.aiTrustBadge.innerHTML = `<i class="fa-solid fa-microchip"></i> Trust: ${trustPct}%${anomalyAlert}`;
         
-        const geoContext = currentCityInfo.name ? `${currentCityInfo.name} + Sudeste Vision` : 'Regional Mesh Active';
+        const geoContext = currentCityInfo.name ? `${currentCityInfo.name} + Regional Mesh` : 'Ultimate Visual Active';
         DOM.aiGeoBadge.innerHTML = `<i class="fa-solid fa-location-crosshairs"></i> ${geoContext}`;
 
         // Update Risk Indicator
         DOM.riskIndicator.className = `risk-indicator ${prediction.level} transition-all`;
-        DOM.riskIcon.className = `fa-solid ${prediction.icon}`;
+        DOM.riskIcon.className = `fa-solid ${prediction.riskScore > 0.6 ? 'fa-triangle-exclamation' : 'fa-shield-check'}`;
         DOM.riskTitle.textContent = prediction.title;
 
-        // Render detailed analysis (from neural network v4.0 MAX)
+        // Render Explainability Layer (from prediction.topFactors)
         renderAIAnalysis(prediction);
 
-        // IA gera o texto original usando o motor NLG (passa as analises tb agora)
-        const aiText = meteorGuardAI.generateText(aiInput, prediction.riskScore, prediction.analysis);
-        
-        // Remover spinner e iniciar digitação
+        // Render NLG (NLG from MeteorGuardAI v5.0 MAX)
         DOM.riskMessage.innerHTML = '';
-        typewriterEffect(DOM.riskMessage, aiText, 18);
+        typewriterEffect(DOM.riskMessage, prediction.explanation, 15);
 
         // Timestamp
         DOM.aiTimestamp.textContent = `${i18n.t('aiLastAnalysis')}: ${prediction.timestamp}`;
     }
 
     function renderAIAnalysis(prediction) {
-        const analysis = prediction.analysis;
         DOM.aiAnalysisSection.classList.remove('hidden');
         
-        // Alerts (red)
-        DOM.aiAlerts.innerHTML = '';
-        analysis.alerts.forEach(alert => {
-            DOM.aiAlerts.innerHTML += `<div class="ai-alert-item">${alert}</div>`;
-        });
+        // Hide legacy sections that are now integrated into NLG
+        DOM.aiAlerts.classList.add('hidden');
+        DOM.aiSuggestions.classList.add('hidden');
+        DOM.aiDetails.classList.add('hidden');
 
-        // Suggestions (blue)
-        DOM.aiSuggestions.innerHTML = '';
-        analysis.suggestions.forEach(sug => {
-            DOM.aiSuggestions.innerHTML += `<div class="ai-suggestion-item">${sug}</div>`;
-        });
-
-        // Details (gray)
-        DOM.aiDetails.innerHTML = '';
-        analysis.details.forEach(det => {
-            DOM.aiDetails.innerHTML += `<div class="ai-detail-item">${det}</div>`;
-        });
-
-        // AI v4.0 MAX: Explainability (SHAP Factors)
-        if (prediction.featureImportance && prediction.featureImportance.length > 0) {
+        // v5.0 MAX: New Explainability Grid
+        if (prediction.topFactors && prediction.topFactors.length > 0) {
             DOM.aiRiskFactors.classList.remove('hidden');
             DOM.aiFactorsList.innerHTML = '';
             
-            // Normalize for visual relative bars
-            const sum = prediction.featureImportance.reduce((a, b) => a + b.score, 0);
-            
-            prediction.featureImportance.forEach(f => {
-                const pct = sum > 0 ? Math.round((f.score / sum) * 100) : 0;
+            prediction.topFactors.forEach(f => {
                 DOM.aiFactorsList.innerHTML += `
                     <div class="factor-item">
-                        <span class="factor-name">${f.feature}</span>
+                        <span class="factor-name">${f.factor}</span>
                         <div class="factor-bar-container">
-                            <div class="factor-bar-fill" style="width: ${pct}%"></div>
+                            <div class="factor-bar-fill" style="width: ${f.percentage}%"></div>
                         </div>
-                        <span class="factor-value">${pct}%</span>
+                        <span class="factor-value">${f.percentage}%</span>
                     </div>
                 `;
             });

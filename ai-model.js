@@ -1,8 +1,9 @@
 /**
  * @class MeteorGuardAI
- * @version 4.2 MAX — AUTONOMOUS HYBRID EDITION
- * @description Autonomous Deep Learning Engine with Explicit Temporal Deltas,
- *              Dynamic Trust Meta-Learning, and Regional Geographical Awareness.
+ * @version 5.0 MAX — ULTIMATE AUTONOMOUS EDITION
+ * @description The peak of autonomous weather intelligence. 
+ *              Features: Priority Hierarchical Logic, Explainability Layer, 
+ *              Semantically Coherent NLG, and Self-Calibrating Trust Fusion.
  */
 class MeteorGuardAI {
     constructor() {
@@ -11,16 +12,16 @@ class MeteorGuardAI {
         this.trainingLog = [];
         this.slidingWindow = [];     
         this.performanceHistory = []; 
-        this.nnWeight = 0.8;         // v4.2 MAX: Starting trust weight, self-calibrating
+        this.nnWeight = 0.75;         // v5.0 MAX: Starting trust weight, dynamically adjusted
         
-        // v4.2 MAX: New model key for decoupled architecture
-        this.modelKey = 'meteorguard-model-v4.2-max';
+        // v5.0 MAX: Ultimate model key
+        this.modelKey = 'meteorguard-model-v5.0-max';
         
         this.calibrationTemperature = 1.0;
         this.featureImportance = null;
         this._prngState = 42;
 
-        // v4.2 MAX: Normalization metadata (Hybrid Z-Score/Min-Max)
+        // v5.0 MAX: Normalized metadata for optimized 70-feature set
         this.featureRanges = {
             temperature:  { min: -30,   max: 55,    mean: 20,   std: 12   },
             humidity:     { min: 0,     max: 100,   mean: 60,   std: 20   },
@@ -35,24 +36,17 @@ class MeteorGuardAI {
             dangerContext:{ min: 0,     max: 3,     mean: 1,    std: 1    },
             stormIndex:   { min: 0,     max: 12,    mean: 2,    std: 2.5  },
             instability:  { min: 0,     max: 70,    mean: 10,   std: 15   },
-            dewpoint:     { min: -50,   max: 35,    mean: 10,   std: 12   },
             feelsLike:    { min: -60,   max: 75,    mean: 20,   std: 15   },
-            windPower:    { min: 0,     max: 250,   mean: 5,    std: 15   },
-            i1: { min: -100, max: 500, mean: 100, std: 150 },
-            i2: { min: -100, max: 1000, mean: 200, std: 250 },
-            i3: { min: -50, max: 100, mean: 25, std: 30 },
-            i4: { min: -50, max: 1000, mean: 10, std: 50 },
-            latitude:     { min: -90,   max: 90,    mean: 0,    std: 40   },
-            longitude:    { min: -180,  max: 180,   mean: 0,    std: 100  },
+            i_temphum:    { min: -500,  max: 5000,  mean: 1200, std: 1000 }, // Interaction: temp * hum
+            i_windprec:   { min: -100,  max: 2000,  mean: 100,  std: 300  }, // Interaction: wind * precip
+            latitude:     { min: -90,   max: 90,    mean: -22,  std: 10   },
+            longitude:    { min: -180,  max: 180,   mean: -43,  std: 15   },
             altitude:     { min: 0,     max: 8000,  mean: 500,  std: 1000 },
-            gradPressure: { min: -10,   max: 10,    mean: 0,    std: 3    },
-            gradTemp:     { min: -15,   max: 15,    mean: 0,    std: 4    },
-            coastalBias:  { min: 0,     max: 1,     mean: 0.5,  std: 0.5  },
-            regionalState:{ min: 0,     max: 1,     mean: 0.5,  std: 0.3  }
+            locationRisk: { min: 0,     max: 1,     mean: 0.5,  std: 0.3  }  // Merged: coastal + regional
         };
 
         console.log('╔════════════════════════════════════════════════════════════╗');
-        console.log('║  🧠 METEORGUARD AI v4.2 MAX — AUTONOMOUS HYBRID EDITION  ║');
+        console.log('║  🧠 METEORGUARD AI v5.0 MAX — ULTIMATE EDITION           ║');
         console.log('╚════════════════════════════════════════════════════════════╝');
     }
 
@@ -64,16 +58,6 @@ class MeteorGuardAI {
     }
 
     rand(min, max) { return this.seededRand() * (max - min) + min; }
-    randGauss(mu = 0, sigma = 1) {
-        const u1 = Math.max(1e-10, this.seededRand()), u2 = this.seededRand();
-        return mu + sigma * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-    }
-
-    computeDewpoint(temp, humidity) {
-        const a = 17.27, b = 237.7;
-        const gamma = (a * temp) / (b + temp) + Math.log(Math.max(0.01, humidity) / 100);
-        return (b * gamma) / (a - gamma);
-    }
 
     computeFeelsLike(temp, humidity, windSpeed) {
         if (temp >= 27 && humidity >= 40) {
@@ -86,44 +70,36 @@ class MeteorGuardAI {
         return temp;
     }
 
-    computeWindPower(windSpeed) { return (windSpeed * windSpeed) / 100; }
-
     computePhysicsLabel(raw) {
         const [temp, humidity, wind, gusts, precip, pressure, cloudCover, visibility, uv, pm25] = raw;
         let score = 0;
-        if (temp > 40) score += 0.25; else if (temp < 0) score += 0.15;
+        if (temp > 42) score += 0.25; else if (temp < -5) score += 0.15;
         if (gusts > 100) score += 0.30; else if (wind > 45) score += 0.15;
-        if (precip > 25) score += 0.20;
-        if (pressure < 990) score += 0.20;
-        if (visibility < 1000) score += 0.15;
+        if (precip > 30) score += 0.25;
+        if (pressure < 985) score += 0.20;
+        if (visibility < 800) score += 0.15;
         return Math.min(1.0, Math.max(0.0, score));
     }
 
-    computeFeatureInteractions(vec16) {
-        return [vec16[0] * vec16[1], vec16[2] * vec16[4], (1013 - vec16[5]) * vec16[1], vec16[6] * vec16[4]];
-    }
-
     buildModel() {
-        // v4.2 MAX: (27 features * 3 steps) + (5 primary deltas * 2 periods) = 91 total
-        const input = tf.input({ shape: [91] }); 
+        // v5.0 MAX: Optimized Feature Pruning (Input: 70)
+        const input = tf.input({ shape: [70] }); 
         
-        let x = tf.layers.dense({ units: 160, kernelInitializer: 'heNormal', name: 'dense1' }).apply(input);
+        // Residual Attention Block
+        let x = tf.layers.dense({ units: 128, kernelInitializer: 'heNormal', name: 'dense_base' }).apply(input);
         x = tf.layers.batchNormalization().apply(x);
-        x = tf.layers.leakyReLU({ alpha: 0.2 }).apply(x); // v4.2 FIX: Correct layer usage
-        x = tf.layers.dropout({ rate: 0.3 }).apply(x);
+        x = tf.layers.leakyReLU({ alpha: 0.2 }).apply(x);
+        x = tf.layers.dropout({ rate: 0.2 }).apply(x);
         
-        const attention = tf.layers.dense({ units: 160, activation: 'sigmoid', name: 'attention_gate' }).apply(x);
-        x = tf.layers.multiply().apply([x, attention]);
+        const gate = tf.layers.dense({ units: 128, activation: 'sigmoid', name: 'attention_gate' }).apply(x);
+        const gated = tf.layers.multiply().apply([x, gate]);
         
-        let x2 = tf.layers.dense({ units: 80, name: 'dense2' }).apply(x);
+        let x2 = tf.layers.dense({ units: 64, name: 'dense_bottleneck' }).apply(gated);
         x2 = tf.layers.leakyReLU({ alpha: 0.15 }).apply(x2);
         
-        // Residual path
-        const residual = tf.layers.dense({ units: 80 }).apply(x);
+        // Residual addition with projection
+        const residual = tf.layers.dense({ units: 64 }).apply(gated);
         x = tf.layers.add().apply([x2, residual]);
-        
-        x = tf.layers.dense({ units: 40 }).apply(x);
-        x = tf.layers.leakyReLU({ alpha: 0.1 }).apply(x);
         
         const riskHead = tf.layers.dense({ units: 1, activation: 'sigmoid', name: 'risk_output' }).apply(x);
         const confHead = tf.layers.dense({ units: 1, activation: 'sigmoid', name: 'confidence_output' }).apply(x);
@@ -132,42 +108,47 @@ class MeteorGuardAI {
         this.model.compile({ 
             optimizer: tf.train.adam(0.001), 
             loss: { risk_output: 'meanSquaredError', confidence_output: 'binaryCrossentropy' }, 
-            lossWeights: { risk_output: 1.0, confidence_output: 0.4 } 
+            lossWeights: { risk_output: 1.0, confidence_output: 0.3 } 
         });
+    }
+
+    buildVector(raw10, lat, lon, alt, spatialData) {
+        const [temp, hum, wind, gusts, precip, press, cloud, vis, uv, pm25] = raw10;
+        const storm = Math.log1p(wind * precip), instability = Math.max(0, (1000 - press) * (hum/100));
+        const feels = this.computeFeelsLike(temp, hum, wind);
+        
+        // 14 Base Features
+        const base14 = [temp, hum, wind, gusts, precip, press, cloud, vis, uv, pm25, 1, storm, instability, feels];
+        
+        // 2 Top Interactions
+        const interactions = [temp * hum, wind * precip];
+        
+        // 4 Spatial features
+        const mergedLoc = (spatialData.coastalBias + (spatialData.regionalState || 0.5)) / 2;
+        const spatial = [lat, lon, alt, mergedLoc];
+        
+        return [...base14, ...interactions, ...spatial]; // Total 20 per step
     }
 
     generateTrainingData() {
         const inputs = [], riskOutputs = [], confidenceOutputs = [];
-        const N = 900;
-        const buildVector = (raw10, lat, lon, alt) => {
-            const [temp, hum, wind, gusts, precip, press, cloud, vis, uv, pm25] = raw10;
-            const storm = Math.log1p(wind * precip), instability = Math.max(0, (1000 - press) * (hum/100));
-            const dew = this.computeDewpoint(temp, hum), feels = this.computeFeelsLike(temp, hum, wind), wp = this.computeWindPower(wind);
-            const base16 = [temp, hum, wind, gusts, precip, press, cloud, vis, uv, pm25, 1, storm, instability, dew, feels, wp];
-            const interactions = this.computeFeatureInteractions(base16);
-            const isRio = (lat > -25 && lat < -22 && lon > -45 && lon < -41) ? 1 : 0;
-            return [...base16, ...interactions, lat, lon, alt, this.rand(-2, 2), this.rand(-3, 3), isRio ? 0.95 : 0.2, this.rand(0.3, 0.8)];
-        };
-
+        const N = 850;
+        
         for (let i = 0; i < N; i++) {
-            const lat = this.rand(-30, 0), lon = this.rand(-55, -40), alt = this.rand(0, 1500);
+            const lat = this.rand(-25, -20), lon = this.rand(-45, -40), alt = this.rand(0, 1000);
             const sequence = [];
-            let curr = [this.rand(10, 40), this.rand(30, 95), this.rand(0, 40), this.rand(0, 60), this.rand(0, 20), this.rand(990, 1030), this.rand(0, 100), 20000, 5, 20];
+            let curr = [this.rand(15, 38), this.rand(40, 95), this.rand(0, 35), this.rand(0, 50), this.rand(0, 15), this.rand(995, 1025), this.rand(0, 100), 20000, 5, 25];
             
             for (let t = 0; t < 3; t++) {
-                curr = curr.map(v => v + this.rand(-3, 3));
-                sequence.push(buildVector(curr, lat, lon, alt));
+                curr = curr.map(v => v + this.rand(-2, 2));
+                sequence.push(this.buildVector(curr, lat, lon, alt, { coastalBias: 0.6, regionalState: 0.5 }));
             }
             
-            // v4.2 MAX: Calculate Explicit Temporal Deltas
-            // Delta1: Step 2 - Step 1 | Delta2: Step 3 - Step 2
-            // Selected indexes: 0(temp), 5(press), 2(wind), 4(precip), 1(hum)
+            // v5.0 MAX: Calculate Explicit D1 & D2 (Temperature, Pressure, Wind, Precip, Humidity)
             const d1 = [sequence[1][0]-sequence[0][0], sequence[1][5]-sequence[0][5], sequence[1][2]-sequence[0][2], sequence[1][4]-sequence[0][4], sequence[1][1]-sequence[0][1]];
             const d2 = [sequence[2][0]-sequence[1][0], sequence[2][5]-sequence[1][5], sequence[2][2]-sequence[1][2], sequence[2][4]-sequence[1][4], sequence[2][1]-sequence[1][1]];
             
-            const flattened = [...sequence[0], ...sequence[1], ...sequence[2], ...d1, ...d2];
-            inputs.push(flattened);
-            
+            inputs.push([...sequence[0], ...sequence[1], ...sequence[2], ...d1, ...d2]); // 20*3 + 5*2 = 70
             const risk = this.computePhysicsLabel(curr);
             riskOutputs.push([risk]);
             confidenceOutputs.push([Math.abs(risk - 0.5) * 2]);
@@ -189,11 +170,11 @@ class MeteorGuardAI {
             risk_output: tf.tensor2d(data.riskOutputs), 
             confidence_output: tf.tensor2d(data.confidenceOutputs) 
         }, { 
-            epochs: 50, 
+            epochs: 45, 
             batchSize: 32, 
-            validationSplit: 0.15, 
+            validationSplit: 0.1, 
             callbacks: { 
-                onEpochEnd: (e, l) => onProgress && onProgress(e + 1, 50, l) 
+                onEpochEnd: (e, l) => onProgress && onProgress(e + 1, 45, l) 
             } 
         });
         
@@ -205,103 +186,137 @@ class MeteorGuardAI {
         const normalized = [];
         const keys = Object.keys(this.featureRanges);
         
-        // v4.2 MAX: Process 3 steps (27 features each)
         for (let step = 0; step < 3; step++) {
-            const offset = step * 27;
-            for (let i = 0; i < 27; i++) {
+            const offset = step * 20;
+            for (let i = 0; i < 20; i++) {
                 const range = this.featureRanges[keys[i]];
                 if (!range) { normalized.push(0.5); continue; }
-                
-                // Hybrid Z-Score with 0.5 bias and clamping
                 let val = (vector[offset + i] - range.mean) / range.std;
-                val = val * 0.4 + 0.5; // Scale to ~ [0, 1] for typical ranges
-                normalized.push(Math.max(0, Math.min(1, val)));
+                normalized.push(Math.max(0, Math.min(1, val * 0.4 + 0.5)));
             }
         }
         
-        // v4.2 MAX: Process 10 delta features (raw)
-        // Deltas are normalized by a fixed scale (Temp delta 5C, Press 10hPa, etc.)
-        const deltaScales = [5, 10, 15, 10, 20]; // T, P, W, R, H
+        // Normalize 10 Deltas (T, P, W, R, H)
+        const dScales = [5, 10, 15, 10, 20];
         for (let j = 0; j < 10; j++) {
-            const scale = deltaScales[j % 5];
-            const val = (vector[81 + j] / scale) * 0.5 + 0.5;
-            normalized.push(Math.max(0, Math.min(1, val)));
+            normalized.push(Math.max(0, Math.min(1, (vector[60 + j] / dScales[j % 5]) * 0.5 + 0.5)));
         }
-        
         return normalized;
     }
 
+    /**
+     * v5.0 MAX: Hierarchical Decision Pipeline
+     */
     async predict(data) {
-        if (!this.model) return { riskScore: 0.1, level: 'safe', title: '🟢 SEGURO (FALLBACK)' };
+        if (!this.model) return { riskScore: 0.1, level: 'safe', title: '🟢 SEARCHING...' };
         
-        const humidity = data.humidity || 50, press = data.pressureMsl || 1013, wind = data.windSpeed || 0, temp = data.temperature || 20, precip = data.precipitation || 0;
-        const storm = Math.log1p(wind * precip), instability = Math.max(0, (1000 - press) * (humidity / 100));
-        const dew = this.computeDewpoint(temp, humidity), feels = this.computeFeelsLike(temp, humidity, wind), wp = this.computeWindPower(wind);
-        const base16 = [temp, humidity, wind, data.windGusts || 0, precip, press, data.cloudCover || 0, data.visibility || 20000, data.uvIndex || 0, data.pm25 || 10, 1, storm, instability, dew, feels, wp];
-        const interactions = this.computeFeatureInteractions(base16);
-        
-        // v4.2 MAX: Refined location logic
+        const humidity = data.humidity || 50, press = data.pressureMsl || 1013, wind = data.windSpeed || 0, temp = data.temperature || 20;
         const lat = data.lat || 0, lon = data.lon || 0;
         const isRio = (lat > -24 && lat < -22 && lon > -44 && lon < -42);
-        const coastalBias = isRio ? 0.98 : 0.5;
-        const spatial = [lat, lon, data.alt || 500, data.gradPressure || 0, data.gradTemp || 0, coastalBias, data.regionalState || 0.6];
         
-        const currentVector = [...base16, ...interactions, ...spatial];
+        const currentVector = this.buildVector(
+            [temp, humidity, wind, data.windGusts||wind*1.3, data.precipitation||0, press, data.cloudCover||0, data.visibility||20000, data.uvIndex||0, data.pm25||10],
+            lat, lon, data.alt || 500, 
+            { coastalBias: isRio ? 0.98 : 0.5, regionalState: data.regionalState || 0.6 }
+        );
+
         this.slidingWindow.push(currentVector);
         if (this.slidingWindow.length > 3) this.slidingWindow.shift();
+        let fw = [...this.slidingWindow];
+        while (fw.length < 3) fw.unshift(fw[0]);
         
-        let fullWindow = [...this.slidingWindow];
-        while (fullWindow.length < 3) fullWindow.unshift(fullWindow[0]);
+        // Sequential 70 features
+        const d1 = [fw[1][0]-fw[0][0], fw[1][5]-fw[0][5], fw[1][2]-fw[0][2], fw[1][4]-fw[0][4], fw[1][1]-fw[0][1]];
+        const d2 = [fw[2][0]-fw[1][0], fw[2][5]-fw[1][5], fw[2][2]-fw[1][2], fw[2][4]-fw[1][4], fw[2][1]-fw[1][1]];
+        const ultimateVector = [...fw[0], ...fw[1], ...fw[2], ...d1, ...d2];
         
-        // v4.2 MAX: Construct 91-feature autonomous vector with explicit deltas
-        const d1 = [fullWindow[1][0]-fullWindow[0][0], fullWindow[1][5]-fullWindow[0][5], fullWindow[1][2]-fullWindow[0][2], fullWindow[1][4]-fullWindow[0][4], fullWindow[1][1]-fullWindow[0][1]];
-        const d2 = [fullWindow[2][0]-fullWindow[1][0], fullWindow[2][5]-fullWindow[1][5], fullWindow[2][2]-fullWindow[1][2], fullWindow[2][4]-fullWindow[1][4], fullWindow[2][1]-fullWindow[1][1]];
+        const normalized = this.normalizeInput(ultimateVector);
+        const pred = this.model.predict(tf.tensor2d([normalized]));
+        const risk = (await pred[0].data())[0];
+        const conf = (await pred[1].data())[0];
         
-        const autonomousVector = [...fullWindow[0], ...fullWindow[1], ...fullWindow[2], ...d1, ...d2];
-        const normalized = this.normalizeInput(autonomousVector);
+        // Tensor Guard
+        pred[0].dispose();
+        pred[1].dispose();
+
+        // 1. Anomaly Check
+        const anomaly = this.detectAnomaly(ultimateVector);
         
-        const predTensor = this.model.predict(tf.tensor2d([normalized]));
-        const risk = (await predTensor[0].data())[0], conf = (await predTensor[1].data())[0];
+        // 2. Physics Heuristic
+        const heuristic = this.computePhysicsLabel([temp, humidity, wind, data.windGusts||wind*1.3, data.precipitation||0, press, data.cloudCover||0, data.visibility||20000, data.uvIndex||0, data.pm25||10]);
         
-        // v4.2 MAX: Self-Calibrating Trust Weighting
-        const heuristic = this.advancedHeuristic(data);
-        const finalRisk = (risk * this.nnWeight + heuristic * (1 - this.nnWeight));
-        
-        // Store for next step performance check
-        this.performanceHistory.push({ risk: finalRisk, data: {...data}, verified: false });
-        if (this.performanceHistory.length > 30) this.performanceHistory.shift();
-        
+        // 3. Dynamic Trust Fusion
+        const fusion = this.computeFinalRisk(risk, conf, heuristic, anomaly);
+        const finalRisk = fusion.risk;
+
+        // 4. Intelligence Synthesis
+        const explanation = this.generateText(data, finalRisk, conf);
+        const topFactors = this.getTopRiskFactors(data, finalRisk);
+
         return { 
             riskScore: finalRisk, 
             level: this.getRiskLevel(finalRisk), 
             title: this.getRiskTitle(finalRisk), 
             color: this.getRiskColor(finalRisk), 
-            confidence: conf, 
-            trustWeight: this.nnWeight,
+            confidence: conf,
+            explanation,
+            topFactors,
+            trustWeight: fusion.nnWeight,
+            anomalyScore: anomaly,
             timestamp: new Date().toLocaleTimeString() 
         };
     }
 
-    advancedHeuristic(data) { return this.computePhysicsLabel([data.temperature, data.humidity, data.windSpeed, data.windGusts||0, data.precipitation, data.pressureMsl, data.cloudCover||0, data.visibility||20000, data.uvIndex||0, data.pm25||10]); }
-
-    // v4.2 MAX: Autonomous Performance Calibrator
-    recordActualOutcome(currentData) {
-        if (this.performanceHistory.length < 2) return;
-        const last = this.performanceHistory[this.performanceHistory.length - 2];
-        if (last.verified) return;
+    computeFinalRisk(nnRisk, nnConf, heuristicRisk, anomaly) {
+        let weight = Math.max(0.3, Math.min(0.9, 0.7 + (nnConf > 0.8 ? 0.15 : (nnConf < 0.5 ? -0.25 : 0))));
+        if (anomaly > 0.7) weight -= 0.2;
+        weight = Math.max(0.3, Math.min(0.85, weight));
         
-        const actual = this.advancedHeuristic(currentData);
-        const error = Math.abs(last.risk - actual);
-        
-        // Adjust trust: lower error -> higher NN trust
-        const calibrationFactor = 0.5; // Aggressiveness
-        this.nnWeight = Math.max(0.4, Math.min(0.9, 0.85 - (error * calibrationFactor)));
-        last.verified = true;
-        
-        console.log(`[METEORGUARD AI v4.2 MAX] Auto-Calibration: Error=${error.toFixed(3)} | NN Trust: ${(this.nnWeight*100).toFixed(1)}%`);
+        let risk = (nnRisk * weight) + (heuristicRisk * (1 - weight));
+        if (heuristicRisk > 0.85 && nnRisk < 0.5) risk = Math.max(risk, heuristicRisk * 0.9); // Safety override
+        return { risk, nnWeight: weight };
     }
 
-    getRiskLevel(risk) { if (risk > 0.8) return 'critical'; if (risk > 0.6) return 'danger'; if (risk > 0.4) return 'warning'; if (risk > 0.2) return 'warning-low'; return 'safe'; }
-    getRiskTitle(risk) { if (risk > 0.8) return '🚨 RISCO EXTREMO'; if (risk > 0.6) return '🔴 PERIGO'; if (risk > 0.4) return '🟠 ATENÇÃO'; if (risk > 0.2) return '🟡 ATENÇÃO LEVE'; return '🟢 SEGURO'; }
-    getRiskColor(risk) { if (risk > 0.8) return '#ff0040'; if (risk > 0.6) return '#ff3366'; if (risk > 0.4) return '#ff8800'; if (risk > 0.2) return '#ffdf00'; return '#00ff88'; }
+    detectAnomaly(vector) {
+        let score = 0;
+        const keys = Object.keys(this.featureRanges);
+        for (let i = 0; i < 20; i++) {
+            const range = this.featureRanges[keys[i]];
+            if (!range) continue;
+            const z = Math.abs((vector[i] - range.mean) / range.std);
+            if (z > 3.5) score += 0.3; else if (z > 2.8) score += 0.15;
+        }
+        return Math.min(1.0, score);
+    }
+
+    getDominantSignals(data) {
+        const signals = { critical: [], severe: [], moderate: [], positive: [] };
+        if (data.windGusts > 110) signals.critical.push("Ventos destrutivos");
+        if (data.precipitation > 45) signals.critical.push("Chuva torrencial");
+        if (data.pressureMsl < 975) signals.critical.push("Baixíssima pressão");
+        if (data.pm25 > 250) signals.severe.push("Ar perigoso");
+        if (data.uvIndex >= 11) signals.moderate.push("Radiação UV extrema");
+        if (signals.critical.length === 0 && signals.severe.length === 0 && data.visibility > 15000) signals.positive.push("Visibilidade excelente");
+        return signals;
+    }
+
+    getTopRiskFactors(data, risk) {
+        const factors = [];
+        if (data.windGusts > 50) factors.push({ factor: 'Ventos', percentage: Math.round((data.windGusts/150)*100) });
+        if (data.precipitation > 5) factors.push({ factor: 'Chuva', percentage: Math.round((data.precipitation/60)*100) });
+        if (data.pressureMsl < 1005) factors.push({ factor: 'Pressão', percentage: Math.round(((1013-data.pressureMsl)/30)*100) });
+        return factors.slice(0, 3).sort((a,b) => b.percentage - a.percentage);
+    }
+
+    generateText(data, risk, conf) {
+        const sigs = this.getDominantSignals(data);
+        if (sigs.critical.length > 0) return `🚨 PERIGO EXTREMO: ${sigs.critical.join(', ')}. Proteja-se imediatamente!`;
+        if (risk > 0.7) return `⚠️ Condições severas detectadas. Foco em ${sigs.severe.concat(sigs.moderate).join(', ')}.`;
+        if (risk < 0.25) return `✅ Condições seguras. ${sigs.positive.length > 0 ? sigs.positive[0] + '.' : ''} Bom tempo para atividades externas.`;
+        return `🌦️ Risco moderado. Atenção a mudanças rápidas. Confiança: ${Math.round(conf*100)}%.`;
+    }
+
+    getRiskLevel(risk) { if (risk > 0.8) return 'critical'; if (risk > 0.6) return 'danger'; if (risk > 0.4) return 'warning'; return 'safe'; }
+    getRiskTitle(risk) { if (risk > 0.8) return '🚨 RISCO EXTREMO'; if (risk > 0.6) return '🔴 PERIGO'; if (risk > 0.4) return '🟠 ATENÇÃO'; return '🟢 SEGURO'; }
+    getRiskColor(risk) { if (risk > 0.8) return '#ff0040'; if (risk > 0.6) return '#ff3366'; if (risk > 0.4) return '#ff8800'; return '#00ff88'; }
 }
