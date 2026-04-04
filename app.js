@@ -295,20 +295,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const current = weatherData.current;
         const interpretation = WeatherService.getWeatherInterpretation(current.weatherCode);
 
-        // Build input for the neural network
+        // Build input for the neural network (Sanitized v5.1)
         const aiInput = {
-            temperature: current.temp,
-            humidity: current.humidity,
-            windSpeed: current.windSpeed,
-            windGusts: current.windGusts || current.windSpeed * 1.3,
-            precipitation: current.precipitation,
-            pressureMsl: current.pressureMsl || 1013,
-            cloudCover: current.cloudCover || 0,
-            visibility: current.visibility || 20000,
-            uvIndex: current.uvIndex || 3,
-            pm25: current.pm25 || 10,
-            dangerContext: interpretation.dangerContext,
-            weatherCode: current.weatherCode
+            temperature: current.temp ?? 20,
+            humidity: current.humidity ?? 50,
+            windSpeed: current.windSpeed ?? 0,
+            windGusts: current.windGusts || (current.windSpeed * 1.3) || 0,
+            precipitation: current.precipitation ?? 0,
+            pressureMsl: current.pressureMsl ?? 1013,
+            cloudCover: current.cloudCover ?? 0,
+            visibility: current.visibility ?? 20000,
+            uvIndex: current.uvIndex ?? 0,
+            pm25: current.pm25 ?? 10,
+            dangerContext: interpretation.dangerContext ?? 1,
+            weatherCode: current.weatherCode ?? 0
         };
 
         // v5.0 MAX: Intelligent Autonomous Pipeline

@@ -1,6 +1,6 @@
 /**
  * @class MeteorGuardAI
- * @version 5.0 MAX — ULTIMATE AUTONOMOUS EDITION
+ * @version 5.1 - STABILITY UPGRADE
  * @description The peak of autonomous weather intelligence. 
  *              Features: Priority Hierarchical Logic, Explainability Layer, 
  *              Semantically Coherent NLG, and Self-Calibrating Trust Fusion.
@@ -208,7 +208,7 @@ class MeteorGuardAI {
      * v5.0 MAX: Hierarchical Decision Pipeline
      */
     async predict(data) {
-        if (!this.model) return { riskScore: 0.1, level: 'safe', title: '🟢 SEARCHING...' };
+        if (!this.model) return { riskScore: 0.1, level: 'safe', title: '🟢 ANÁLISE...' };
         
         const humidity = data.humidity || 50, press = data.pressureMsl || 1013, wind = data.windSpeed || 0, temp = data.temperature || 20;
         const lat = data.lat || 0, lon = data.lon || 0;
@@ -254,11 +254,11 @@ class MeteorGuardAI {
         const topFactors = this.getTopRiskFactors(data, finalRisk);
 
         return { 
-            riskScore: finalRisk, 
-            level: this.getRiskLevel(finalRisk), 
-            title: this.getRiskTitle(finalRisk), 
-            color: this.getRiskColor(finalRisk), 
-            confidence: conf,
+            riskScore: finalRisk || 0, 
+            level: this.getRiskLevel(finalRisk || 0), 
+            title: this.getRiskTitle(finalRisk || 0), 
+            color: this.getRiskColor(finalRisk || 0), 
+            confidence: isNaN(conf) ? 0.5 : conf,
             explanation,
             topFactors,
             trustWeight: fusion.nnWeight,
@@ -310,16 +310,18 @@ class MeteorGuardAI {
 
     generateText(data, risk, conf) {
         const sigs = this.getDominantSignals(data);
+        const displayConf = isNaN(conf) ? 0 : Math.round(conf * 100);
+        
         if (sigs.critical.length > 0) return `🚨 PERIGO EXTREMO: ${sigs.critical.join(', ')}. Proteja-se imediatamente!`;
         if (risk > 0.7) return `⚠️ Condições severas detectadas. Foco em ${sigs.severe.concat(sigs.moderate).join(', ')}.`;
-        if (risk < 0.25) return `✅ Condições seguras. ${sigs.positive.length > 0 ? sigs.positive[0] + '.' : ''} Bom tempo para atividades externas.`;
-        return `🌦️ Risco moderado. Atenção a mudanças rápidas. Confiança: ${Math.round(conf*100)}%.`;
+        if (risk < 0.35) return `✅ Condições seguras. ${sigs.positive.length > 0 ? sigs.positive[0] + '.' : 'Aproveite o dia!'} (Confiança: ${displayConf}%)`;
+        return `🌦️ Risco moderado. Atenção a mudanças rápidas. Confiança: ${displayConf}%.`;
     }
 
-    getRiskLevel(risk) { if (risk > 0.8) return 'critical'; if (risk > 0.6) return 'danger'; if (risk > 0.4) return 'warning'; return 'safe'; }
-    getRiskTitle(risk) { if (risk > 0.8) return '🚨 RISCO EXTREMO'; if (risk > 0.6) return '🔴 PERIGO'; if (risk > 0.4) return '🟠 ATENÇÃO'; return '🟢 SEGURO'; }
-    getRiskColor(risk) { if (risk > 0.8) return '#ff0040'; if (risk > 0.6) return '#ff3366'; if (risk > 0.4) return '#ff8800'; return '#00ff88'; }
+    getRiskLevel(risk) { if (risk > 0.8) return 'critical'; if (risk > 0.6) return 'danger'; if (risk > 0.35) return 'warning'; return 'safe'; }
+    getRiskTitle(risk) { if (risk > 0.8) return '🚨 RISCO EXTREMO'; if (risk > 0.6) return '🔴 PERIGO'; if (risk > 0.35) return '🟠 ATENÇÃO'; return '🟢 SEGURO'; }
+    getRiskColor(risk) { if (risk > 0.8) return '#ff0040'; if (risk > 0.6) return '#ff3366'; if (risk > 0.35) return '#ff8800'; return '#00ff88'; }
 }
 
-// Inst�ncia Global da IA
+// Inicialização Global
 const meteorGuardAI = new MeteorGuardAI();
