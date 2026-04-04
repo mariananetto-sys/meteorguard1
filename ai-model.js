@@ -302,20 +302,52 @@ class MeteorGuardAI {
 
     getTopRiskFactors(data, risk) {
         const factors = [];
-        if (data.windGusts > 50) factors.push({ factor: 'Ventos', percentage: Math.round((data.windGusts/150)*100) });
-        if (data.precipitation > 5) factors.push({ factor: 'Chuva', percentage: Math.round((data.precipitation/60)*100) });
-        if (data.pressureMsl < 1005) factors.push({ factor: 'Pressão', percentage: Math.round(((1013-data.pressureMsl)/30)*100) });
+        if (data.windGusts > 50) factors.push({ factor: 'Ventos Fortes', percentage: Math.round((data.windGusts/150)*100) });
+        if (data.precipitation > 5) factors.push({ factor: 'Volume de Chuva', percentage: Math.round((data.precipitation/60)*100) });
+        if (data.pressureMsl < 1005) factors.push({ factor: 'Queda de Pressão', percentage: Math.round(((1013-data.pressureMsl)/30)*100) });
+        if (data.humidity > 85) factors.push({ factor: 'Umidade Elevada', percentage: Math.round(data.humidity) });
         return factors.slice(0, 3).sort((a,b) => b.percentage - a.percentage);
     }
 
     generateText(data, risk, conf) {
         const sigs = this.getDominantSignals(data);
+        const factors = this.getTopRiskFactors(data, risk);
         const displayConf = isNaN(conf) ? 0 : Math.round(conf * 100);
         
-        if (sigs.critical.length > 0) return `🚨 PERIGO EXTREMO: ${sigs.critical.join(', ')}. Proteja-se imediatamente!`;
-        if (risk > 0.7) return `⚠️ Condições severas detectadas. Foco em ${sigs.severe.concat(sigs.moderate).join(', ')}.`;
-        if (risk < 0.35) return `✅ Condições seguras. ${sigs.positive.length > 0 ? sigs.positive[0] + '.' : 'Aproveite o dia!'} (Confiança: ${displayConf}%)`;
-        return `🌦️ Risco moderado. Atenção a mudanças rápidas. Confiança: ${displayConf}%.`;
+        // 1. Introdução Baseada em Confiança
+        let text = "";
+        if (displayConf < 40 && displayConf > 0) {
+            text = "Ainda estou calibrando meus sensores para este padrão, mas minha análise inicial indica que ";
+        } else if (displayConf === 0) {
+            text = "Estou processando os primeiros sinais da atmosfera. Por enquanto, observo que ";
+        } else {
+            text = "Após analisar os padrões climáticos atuais, verifico que ";
+        }
+
+        // 2. Corpo Baseado em Risco e Fatores
+        if (sigs.critical.length > 0) {
+            text += `estamos sob **PERIGO EXTREMO**! Detectei ${sigs.critical.join(' e ')} em níveis críticos. É vital buscar abrigo e evitar áreas descampadas imediatamente.`;
+        } else if (risk > 0.7) {
+            text += `as condições são severas e instáveis. ${sigs.severe.length > 0 ? 'O foco de preocupação é ' + sigs.severe.join(', ') + '.' : ''} Recomendo evitar atividades ao ar livre prolongadas.`;
+        } else if (risk < 0.35) {
+            text += "o tempo está estável e seguro. ";
+            if (sigs.positive.length > 0) {
+                text += `Destaque para ${sigs.positive.join(' e ')}, o que favorece muito atividades externas.`;
+            } else {
+                text += "As condições atuais são ideais para o dia a dia.";
+            }
+        } else {
+            // Risco Moderado
+            const topF = factors.map(f => f.factor).join(' e ');
+            text += `existe um risco moderado no momento, impulsionado principalmente por alterações em **${topF || 'diversos fatores'}**. Fique atento a mudanças repentinas no horizonte.`;
+        }
+
+        // 3. Conclusão / Conselho
+        if (risk > 0.5) {
+            text += " Mantenha o MeteorGuard ativo para atualizações em tempo real.";
+        }
+
+        return text;
     }
 
     getRiskLevel(risk) { if (risk > 0.8) return 'critical'; if (risk > 0.6) return 'danger'; if (risk > 0.35) return 'warning'; return 'safe'; }
