@@ -1,15 +1,19 @@
-// ==========================================
-// METEORGUARD AI ENGINE
-// Rede Neural Real com TensorFlow.js
-// ==========================================
-
+/**
+ * @class MeteorGuardAI
+ * @description Motor de Inteligência Artificial Local (TensorFlow.js) para análise de riscos climáticos.
+ * Versão 2.0 — Upgrade de Regularização L2, Dados Extremos e Early Stopping Nativo.
+ */
 class MeteorGuardAI {
+    /**
+     * @constructor
+     * Inicializa os parâmetros basais da IA e define os ranges de normalização das features.
+     */
     constructor() {
         this.model = null;
         this.isReady = false;
         this.trainingLog = [];
-        this.modelKey = 'meteorguard-model-v1.1';
-        this._seed = 42; // Seed para reprodutibilidade
+        this.modelKey = 'meteorguard-model-v2.0'; // Upgrade de chave para forçar novo treino na v2.0
+        this._seed = 42; 
         
         // Normalização dos inputs (min/max para cada feature)
         this.featureRanges = {
@@ -39,38 +43,39 @@ class MeteorGuardAI {
         return this.seededRand() * (max - min) + min;
     }
 
-    // ==========================================
-    // STEP 1: Construir a arquitetura da rede neural
-    // ==========================================
+    /**
+     * Constrói a arquitetura da rede neural sequencial.
+     * Implementa regularização L2 e ativações Leaky ReLU para evitar overfitting e gradientes nulos.
+     */
     buildModel() {
         this.model = tf.sequential();
 
         // Camada de entrada + 1ª camada oculta (32 neurônios)
         this.model.add(tf.layers.dense({
-            inputShape: [13], // 13 features de entrada
+            inputShape: [13],
             units: 32,
-            activation: 'relu',
-            kernelInitializer: 'heNormal'
+            activation: 'leakyRelu', // Switched for better gradient flow
+            kernelInitializer: 'heNormal',
+            kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }) // Previne pesos explosivos
         }));
 
-        // Dropout para prevenir overfitting
         this.model.add(tf.layers.dropout({ rate: 0.2 }));
 
         // 2ª camada oculta (16 neurônios)
         this.model.add(tf.layers.dense({
             units: 16,
-            activation: 'relu',
-            kernelInitializer: 'heNormal'
+            activation: 'leakyRelu',
+            kernelInitializer: 'heNormal',
+            kernelRegularizer: tf.regularizers.l2({ l2: 0.01 })
         }));
         this.model.add(tf.layers.dropout({ rate: 0.1 }));
 
         // 3ª camada oculta (8 neurônios)
         this.model.add(tf.layers.dense({
             units: 8,
-            activation: 'relu',
+            activation: 'leakyRelu',
             kernelInitializer: 'heNormal'
         }));
-        this.model.add(tf.layers.dropout({ rate: 0.1 }));
 
         // Camada de saída (1 neurônio - probabilidade de risco 0 a 1)
         this.model.add(tf.layers.dense({
@@ -78,26 +83,27 @@ class MeteorGuardAI {
             activation: 'sigmoid'
         }));
 
-        // Compilar com MSE (Correto para saída de riscos de regressão contínua 0→1)
+        // Compilar com MSE (Melhor para regressão de score 0→1)
         this.model.compile({
-            optimizer: tf.train.adam(0.005),
+            optimizer: tf.train.adam(0.003), // Taxa de aprendizado levemente menor p/ L2
             loss: 'meanSquaredError',
             metrics: ['mse']
         });
 
-        console.log('[METEORGUARD AI] Arquitetura neural construída: 13→32→16(D)→8(D)→1');
+        console.log('[METEORGUARD AI] Arquitetura v2.0 operacional (L2 + LeakyRelu).');
     }
 
-    // ==========================================
-    // STEP 2: Gerar dados de treinamento sintéticos
-    //  Baseados em padrões meteorológicos reais
-    // ==========================================
+    /**
+     * Gera um dataset sintético balanceado com 3000 amostras.
+     * Inclui "Black Swan Events" (Cenários Extremos Raros) para robustez.
+     */
     generateTrainingData() {
         const inputs = [];
         const outputs = [];
+        const samplesPerCategory = 600; // Aumento p/ 3000 amostras totais
 
-        // ---- CENÁRIOS SEGUROS (400 amostras, balanceado) ----
-        for (let i = 0; i < 400; i++) {
+        // ---- CENÁRIOS SEGUROS ----
+        for (let i = 0; i < samplesPerCategory; i++) {
             inputs.push([
                 this.rand(18, 28),    // temp
                 this.rand(40, 60),    // umidade
@@ -113,93 +119,94 @@ class MeteorGuardAI {
                 0,                    // stormIndex (log1p)
                 0                     // instability (normalizada)
             ]);
-            outputs.push([0.0]); // Risco minimo puro
+            outputs.push([0.0]);
         }
 
-        // ---- CENÁRIOS DE ATENÇÃO LEVE (400 amostras, balanceado) ----
-        for (let i = 0; i < 400; i++) {
+        // ---- CENÁRIOS DE ATENÇÃO LEVE ----
+        for (let i = 0; i < samplesPerCategory; i++) {
             inputs.push([
                 this.rand(10, 32),
-                this.rand(50, 75),
+                this.rand(50, 75) + this.rand(-5, 5),
                 this.rand(10, 25),
                 this.rand(15, 35),
-                this.rand(0, 3),      // garoa
+                this.rand(0, 3),
                 this.rand(1005, 1015),
                 this.rand(20, 60),
                 this.rand(5000, 15000),
                 this.rand(3, 7),
                 this.rand(15, 40),
-                1,                     // código: instabilidade
-                Math.log1p(this.rand(0, 75)),      // stormIndex (log)
-                Math.max(0, (1000 - this.rand(1005, 1015)) * (this.rand(50, 75) / 100))  // instability
+                1,
+                Math.log1p(this.rand(0, 75)),
+                Math.max(0, (1000 - this.rand(1005, 1015)) * (this.rand(50, 75) / 100))
             ]);
-            outputs.push([0.25]); // Risco leve
+            outputs.push([0.25]);
         }
 
-        // ---- CENÁRIOS DE ATENÇÃO MODERADA (400 amostras, balanceado) ----
-        for (let i = 0; i < 400; i++) {
+        // ---- CENÁRIOS DE ATENÇÃO MODERADA ----
+        for (let i = 0; i < samplesPerCategory; i++) {
             inputs.push([
                 this.rand(8, 25),
-                this.rand(70, 90),    // umidade alta
-                this.rand(20, 45),    // vento forte
+                this.rand(70, 90),
+                this.rand(20, 45),
                 this.rand(30, 60),
-                this.rand(2, 15),     // chuva moderada
-                this.rand(995, 1010), // pressão caindo
-                this.rand(60, 95),    // muito nublado
-                this.rand(3000, 8000),// visibilidade reduzida
+                this.rand(2, 18),
+                this.rand(995, 1010),
+                this.rand(60, 95),
+                this.rand(3000, 8000),
                 this.rand(0, 3),
                 this.rand(30, 80),
-                2,                    // código: chuva moderada
-                Math.log1p(this.rand(40, 300)),   // stormIndex (log)
-                Math.max(0, (1000 - this.rand(995, 1010)) * (this.rand(70, 90) / 100))  // instability
+                2,
+                Math.log1p(this.rand(40, 300)),
+                Math.max(0, (1000 - this.rand(995, 1010)) * (this.rand(70, 90) / 100))
             ]);
-            outputs.push([0.5]); // Risco moderado
+            outputs.push([0.5]);
         }
 
-        // ---- CENÁRIOS DE PERIGO (400 amostras, balanceado) ----
-        for (let i = 0; i < 400; i++) {
+        // ---- CENÁRIOS DE PERIGO ----
+        for (let i = 0; i < samplesPerCategory; i++) {
             inputs.push([
                 this.rand(5, 20),
-                this.rand(85, 98),    // umidade muito alta
-                this.rand(40, 80),    // vento muito forte
-                this.rand(60, 120),   // rajadas perigosas
-                this.rand(10, 40),    // chuva forte
-                this.rand(980, 1000), // pressão baixa
-                this.rand(85, 100),   // céu totalmente coberto
-                this.rand(500, 3000), // visibilidade ruim
+                this.rand(85, 98),
+                this.rand(40, 80),
+                this.rand(60, 120),
+                this.rand(15, 60),
+                this.rand(980, 1000),
+                this.rand(85, 100),
+                this.rand(500, 3000),
                 this.rand(0, 2),
                 this.rand(50, 150),
-                3,                    // código: tempestade
-                Math.log1p(this.rand(400, 2000)), // stormIndex (log)
-                Math.max(0, (1000 - this.rand(980, 1000)) * (this.rand(85, 98) / 100))  // instability
+                3,
+                Math.log1p(this.rand(400, 2500)),
+                Math.max(0, (1000 - this.rand(980, 1000)) * (this.rand(85, 98) / 100))
             ]);
-            outputs.push([0.85]); // Risco de perigo alto
+            outputs.push([0.85]);
         }
 
-        // ---- CENÁRIOS DE RISCO EXTREMO RAROS (400 amostras, balanceado) ----
-        for (let i = 0; i < 400; i++) {
+        // ---- CENÁRIOS DE RISCO EXTREMO (BLACK SWAN EVENTS) ----
+        for (let i = 0; i < samplesPerCategory; i++) {
+            const isHeatwave = this.rand(0, 1) > 0.5;
+
             inputs.push([
-                this.rand(-5, 45),
-                this.rand(90, 100),   // saturação total
-                this.rand(70, 200),   // vendaval extremo ou furacão
-                this.rand(100, 250),  // rajadas destrutivas > 180
-                this.rand(30, 150),   // chuva torrencial severa
-                this.rand(940, 985),  // pressão raramente muito baixa (ciclone extratropical)
-                100,                   // nuvens totais
-                this.rand(10, 500),   // visibilidade quase zero
-                0,
-                this.rand(100, 500),  // qualidade do ar péssima
-                3,                    // código: tempestade severa
-                Math.log1p(this.rand(2100, 30000)), // stormIndex (log)
-                Math.max(0, (1000 - this.rand(940, 985)) * (this.rand(90, 100) / 100))  // instability
+                isHeatwave ? this.rand(45, 55) : this.rand(-15, 10),
+                this.rand(90, 100),
+                isHeatwave ? this.rand(10, 30) : this.rand(90, 250),
+                isHeatwave ? this.rand(20, 50) : this.rand(120, 350),
+                isHeatwave ? 0 : this.rand(40, 250),
+                this.rand(930, 980),
+                100,
+                this.rand(10, 400),
+                isHeatwave ? this.rand(10, 15) : 0, 
+                this.rand(150, 500),
+                3,
+                Math.log1p(this.rand(3000, 50000)),
+                Math.max(0, (1000 - this.rand(930, 980)) * (this.rand(90, 100) / 100))
             ]);
-            outputs.push([1.0]); // Classificação pura 100% perigo
+            outputs.push([1.0]);
         }
 
-        // --- Adição de Ruído Gaussiano para robustez (Generalização) ---
+        // --- Adição de Ruído Gaussiano Final ---
         for (let i = 0; i < inputs.length; i++) {
             for (let j = 0; j < inputs[i].length; j++) {
-                // Adiciona ruído de ±1 a 5% dependendo do range da feature
                 const noise = this.rand(-0.02, 0.02) * (inputs[i][j] || 1);
                 inputs[i][j] += noise;
             }
@@ -208,88 +215,64 @@ class MeteorGuardAI {
         return { inputs, outputs };
     }
 
-    // ==========================================
-    // STEP 3: Treinar a rede neural (ou carregar do cache)
-    // ==========================================
+    /**
+     * Treina a rede neural ou carrega do cache local do navegador.
+     * Implementa Early Stopping nativo para parar o treino quando o erro de validação estagna.
+     * @param {Function} onProgress Callback para atualizar a barra de progresso na UI.
+     */
     async train(onProgress) {
-        // Tentar carregar modelo salvo do localStorage
         try {
             const savedModel = await tf.loadLayersModel('localstorage://' + this.modelKey);
             this.model = savedModel;
             this.model.compile({
-                optimizer: tf.train.adam(0.005),
+                optimizer: tf.train.adam(0.003),
                 loss: 'meanSquaredError',
                 metrics: ['mse']
             });
             this.isReady = true;
-            console.log('[METEORGUARD AI] ⚡ Modelo carregado do cache! Treinamento pulado.');
-            if (onProgress) onProgress(15, 15, { loss: 0, accuracy: 1 });
+            console.log('[METEORGUARD AI] ⚡ Modelo v2.0 carregado do cache!');
+            if (onProgress) onProgress(20, 20, { loss: 0, accuracy: 1 });
             return;
         } catch (e) {
-            console.log('[METEORGUARD AI] Nenhum modelo salvo. Iniciando treinamento...');
+            console.log('[METEORGUARD AI] Treinando novo motor v2.0...');
         }
 
-        console.log('[METEORGUARD AI] Iniciando treinamento da rede neural (2000 cenários)...');
-        
         const trainData = this.generateTrainingData();
         const inputs = tf.tensor2d(trainData.inputs.map(row => this.normalizeInput(row)));
         const outputs = tf.tensor2d(trainData.outputs);
 
-        const epochs = 50;
-        
-        // Early Stopping Manual (compatível com TensorFlow.js no navegador)
-        let bestValLoss = Infinity;
-        let patienceCounter = 0;
-        const patience = 5;
-        let stopped = false;
-
-        const callbacks = {
-            onEpochEnd: (epoch, logs) => {
-                const mse = logs.mse || 0;
-                if (onProgress) {
-                    onProgress(epoch + 1, epochs, logs.loss, mse);
-                }
-
-                // Early Stopping: monitora val_loss
-                const valLoss = logs.val_loss;
-                if (valLoss !== undefined) {
-                    if (valLoss < bestValLoss - 0.0001) {
-                        bestValLoss = valLoss;
-                        patienceCounter = 0;
-                    } else {
-                        patienceCounter++;
-                        if (patienceCounter >= patience) {
-                            stopped = true;
-                            console.log(`[METEORGUARD AI] ⏹️ Early Stopping na época ${epoch + 1} (val_loss estagnado em ${valLoss.toFixed(5)})`);
-                            this.model.stopTraining = true;
-                        }
-                    }
+        const epochs = 60;
+        const callbacks = [
+            tf.callbacks.earlyStopping({
+                monitor: 'val_loss',
+                patience: 6,
+                minDelta: 0.0001
+            }),
+            {
+                onEpochEnd: (epoch, logs) => {
+                    if (onProgress) onProgress(epoch + 1, epochs, logs.loss, logs.mse);
                 }
             }
-        };
+        ];
 
         await this.model.fit(inputs, outputs, {
             epochs: epochs,
-            batchSize: 32,
-            validationSplit: 0.2,
+            batchSize: 48, // Batch maior p/ estabilidade com L2
+            validationSplit: 0.15,
             shuffle: true,
             callbacks: callbacks
         });
 
-        // Limpar tensores da memória
         inputs.dispose();
         outputs.dispose();
 
-        // Salvar modelo no localStorage para próxima visita
         try {
             await this.model.save('localstorage://' + this.modelKey);
-            console.log('[METEORGUARD AI] 💾 Modelo salvo no cache do navegador.');
         } catch (e) {
-            console.warn('[METEORGUARD AI] Não foi possível salvar modelo:', e);
+            console.warn('[METEORGUARD AI] Erro ao cachear modelo:', e);
         }
 
         this.isReady = true;
-        console.log('[METEORGUARD AI] ✅ Treinamento concluído! Rede neural operacional.');
     }
 
     // ==========================================
@@ -430,8 +413,8 @@ class MeteorGuardAI {
             suggestions.push(ctx.windModSugg);
         }
 
-        // --- Análise de Chuva ---
-        const rainFixed = data.precipitation ? data.precipitation.toFixed(1) : '0.0';
+        // --- Análise de Chuva (Precisão de 2 casas amigável) ---
+        const rainFixed = data.precipitation ? data.precipitation.toFixed(2) : '0.00';
         if (data.precipitation > 30) {
             alerts.push(ctx.rainCritAlert(rainFixed));
             suggestions.push(ctx.rainCritSugg);
@@ -592,7 +575,12 @@ class MeteorGuardAI {
             text += ctx.nlgFinally + ' ' + third.charAt(0).toLowerCase() + third.slice(1) + (third.endsWith('.') ? ' ' : '. ');
         }
 
-        // Conclusão
+        // Conclusão com Rain mm formatado explicitamente (2 casas decimais)
+        const rainValueStr = data.precipitation ? data.precipitation.toFixed(2) : '0.00';
+        if (data.precipitation > 0 && !text.includes(rainValueStr)) {
+            text += `Lembre-se que temos ${rainValueStr}mm de chuva esperados. `;
+        }
+
         if (riskScore < 0.2) text += ctx.nlgOutroSafe(percentage);
         else if (riskScore < 0.65) text += ctx.nlgOutroWarn(percentage);
         else text += ctx.nlgOutroCrit(percentage);
