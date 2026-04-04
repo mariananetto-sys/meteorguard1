@@ -318,34 +318,63 @@ class MeteorGuardAI {
         const factors = this.getTopRiskFactors(data, risk);
         const displayConf = isNaN(conf) ? 0 : Math.round(conf * 100);
         
+        const intros = {
+            lowConf: [
+                "Estou processando os primeiros sinais da atmosfera, mas por enquanto ",
+                "Ainda calibrando com a rede regional, mas observo que ",
+                "Os sinais iniciais sugerem que ",
+                "Monitoramento em fase inicial indica que "
+            ],
+            safe: [
+                "Tudo em ordem por aqui. ",
+                "O clima está cooperando hoje. ",
+                "Situação bem tranquila no momento. ",
+                "Céu e sensores indicam estabilidade. "
+            ],
+            warning: [
+                "Percebi uma oscilação importante: ",
+                "Atenção a uma mudança no padrão: ",
+                "O sistema detectou uma variação: ",
+                "Fique de olho, as métricas mudaram: "
+            ],
+            danger: [
+                "Olha, a situação exige cautela: ",
+                "Alerta de instabilidade detectado: ",
+                "As condições estão se deteriorando: ",
+                "Risco elevado confirmado pelos sensores: "
+            ]
+        };
+
+        const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        
         let text = "";
         
-        // 1. Introdução Natural
+        // 1. Introdução Dinâmica
         if (displayConf < 30) {
-            text = "Opa, ainda estou sentindo o clima por aqui, mas por enquanto ";
-        } else if (risk > 0.8) {
-            text = "Olha, a situação está séria por aqui: ";
-        } else if (risk < 0.35) {
-            text = "Tudo tranquilo no momento. ";
+            text = randomChoice(intros.lowConf);
+        } else if (risk > 0.6) {
+            text = randomChoice(intros.danger);
+        } else if (risk > 0.35) {
+            text = randomChoice(intros.warning);
         } else {
-            text = "Percebi uma mudança no padrão aqui: ";
+            text = randomChoice(intros.safe);
         }
 
         // 2. Corpo Literário e Direto
         if (sigs.critical.length > 0) {
-            text += `percebi ${sigs.critical.join(' e ')} em níveis perigosos. É melhor não facilitar e ficar em um lugar seguro até isso passar.`;
+            text += `percebi ${sigs.critical.join(' e ')} em níveis críticos. É fundamental buscar abrigo e evitar qualquer exposição agora.`;
         } else if (risk > 0.7) {
-            text += `o tempo está bem instável e o que mais me preocupa agora é ${sigs.severe.join(', ')}. Se puder, evite áreas abertas.`;
+            text += `o que mais me preocupa agora é **${sigs.severe.join(', ') || 'a instabilidade geral'}**. Se puder, evite áreas abertas e encostas.`;
         } else if (risk < 0.35) {
             if (sigs.positive.length > 0) {
-                text += `Destaque para ${sigs.positive.join(' e ')}. Está excelente para qualquer atividade externa!`;
+                text += `temos ${sigs.positive.join(' e ')}. O cenário está ótimo para qualquer atividade externa!`;
             } else {
-                text += "Pode seguir com seus planos, o clima está trabalhando a seu favor hoje.";
+                text += "pode seguir com seus planos, os indicadores estão bem estáveis e seguros.";
             }
         } else {
             // Risco Moderado
             const topF = factors.map(f => f.factor).join(' e ');
-            text += `o risco subiu um pouco principalmente por causa de **${topF || 'algumas variações sutis'}**. Nada crítico por enquanto, mas é bom ficar de olho no horizonte.`;
+            text += `o risco subiu um pouco devido a **${topF || 'variações na pressão e vento'}**. Não é nada crítico ainda, mas vale ficar atento a mudanças no horizonte.`;
         }
 
         return text;
@@ -389,8 +418,9 @@ class MeteorGuardAI {
         const riskLevel = this.getRiskTitle(risk);
         
         // System context injection
-        const prompt = `System: Você é o MeteorGuard AI, um assistente brasileiro de clima inteligente. 
-Contexto: Temperatura ${data.temperature}°C, Chuva ${data.precipitation}mm, Vento ${data.windSpeed}km/h, Risco ${riskLevel}.
+        const prompt = `System: Você é o MeteorGuard AI, um assistente de clima muito prestativo, direto e humano do Brasil.
+Contexto: Cidade: ${data.name}, Temp: ${data.temperature}°C, Chuva: ${data.precipitation}mm, Vento: ${data.windSpeed}km/h, Risco: ${riskLevel}.
+Regra: Responda de forma curta, natural e conversacional. Não use listas.
 User: ${query}
 AI:`;
 
