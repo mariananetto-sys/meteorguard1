@@ -29,20 +29,25 @@ const i18n = {
             visibility: 'Visibilidade',
 
             // AI Panel
-            aiTitle: 'MeteorGuard AI',
+            aiTitle: 'MeteorGuard IA',
             aiProcessing: 'PROCESSANDO',
             aiOnline: 'ONLINE',
-            aiTraining: 'Rede Neural: Treinando 350 cenários climáticos...',
+            aiTraining: 'Rede Neural: Treinando 2000 cenários climáticos...',
             aiEpoch: (e, t) => `Época ${e}/${t} — Inicializando neurônios...`,
             aiLastAnalysis: 'Última análise neural',
             currentRain: 'Precipitação Atual',
             dailyRain: 'Chuva Acumulada Dia',
 
-            // Risk Levels
             riskSafe: 'Nível: Seguro',
             riskWarning: 'Atenção: Clima Adverso',
             riskDanger: 'Risco Alto: Condições Severas',
             riskCritical: 'EMERGÊNCIA: Risco Extremo',
+            
+            aiRiskTitleSafe: (v) => `🟢 SEGURO — Risco ${v}%`,
+            aiRiskTitleWarningLow: (v) => `🟡 ATENÇÃO LEVE — Risco ${v}%`,
+            aiRiskTitleWarning: (v) => `🟠 ATENÇÃO — Risco ${v}%`,
+            aiRiskTitleDanger: (v) => `🔴 PERIGO — Risco ${v}%`,
+            aiRiskTitleCritical: (v) => `🚨 RISCO EXTREMO — Risco ${v}%`,
 
             // Alerts
             alertsTitle: 'ALERTAS METEOROLÓGICOS ATIVOS',
@@ -189,16 +194,22 @@ const i18n = {
             aiTitle: 'MeteorGuard AI',
             aiProcessing: 'PROCESSING',
             aiOnline: 'ONLINE',
-            aiTraining: 'Neural Net: Training 350 climate scenarios...',
+            aiTraining: 'Neural Network: Training 2000 weather scenarios...',
             aiEpoch: (e, t) => `Epoch ${e}/${t} — Initializing neurons...`,
             aiLastAnalysis: 'Latest neural analysis',
             currentRain: 'Current Precipitation',
-            dailyRain: 'Daily Rainfall',
+            dailyRain: 'Daily Accumulated Rain',
 
             riskSafe: 'Level: Safe',
             riskWarning: 'Warning: Adverse Weather',
             riskDanger: 'High Risk: Severe Conditions',
             riskCritical: 'EMERGENCY: Extreme Risk',
+            
+            aiRiskTitleSafe: (v) => `🟢 SAFE — Risk ${v}%`,
+            aiRiskTitleWarningLow: (v) => `🟡 MINOR WARNING — Risk ${v}%`,
+            aiRiskTitleWarning: (v) => `🟠 WARNING — Risk ${v}%`,
+            aiRiskTitleDanger: (v) => `🔴 DANGER — Risk ${v}%`,
+            aiRiskTitleCritical: (v) => `🚨 EXTREME RISK — Risk ${v}%`,
 
             alertsTitle: 'ACTIVE WEATHER ALERTS',
             govAlertTitle: 'EXTREME GOVERNMENT ALERT',
@@ -337,7 +348,7 @@ const i18n = {
             aiTitle: 'MeteorGuard AI',
             aiProcessing: 'PROCESANDO',
             aiOnline: 'EN LÍNEA',
-            aiTraining: 'Red Neuronal: Entrenando 350 escenarios climáticos...',
+            aiTraining: 'Red Neuronal: Entrenando 2000 escenarios climáticos...',
             aiEpoch: (e, t) => `Época ${e}/${t} — Inicializando neuronas...`,
             aiLastAnalysis: 'Último análisis neuronal',
             currentRain: 'Precipitación Actual',
@@ -347,6 +358,12 @@ const i18n = {
             riskWarning: 'Atención: Clima Adverso',
             riskDanger: 'Riesgo Alto: Condiciones Severas',
             riskCritical: 'EMERGENCIA: Riesgo Extremo',
+            
+            aiRiskTitleSafe: (v) => `🟢 SEGURO — Riesgo ${v}%`,
+            aiRiskTitleWarningLow: (v) => `🟡 ATENCIÓN LEVE — Riesgo ${v}%`,
+            aiRiskTitleWarning: (v) => `🟠 ATENCIÓN — Riesgo ${v}%`,
+            aiRiskTitleDanger: (v) => `🔴 PELIGRO — Riesgo ${v}%`,
+            aiRiskTitleCritical: (v) => `🚨 RIESGO EXTREMO — Riesgo ${v}%`,
 
             alertsTitle: 'ALERTAS METEOROLÓGICAS ACTIVAS',
             govAlertTitle: 'ALERTA GUBERNAMENTAL EXTREMA',

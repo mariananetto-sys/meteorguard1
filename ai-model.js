@@ -8,7 +8,7 @@ class MeteorGuardAI {
         this.model = null;
         this.isReady = false;
         this.trainingLog = [];
-        this.modelKey = 'meteorguard-model';
+        this.modelKey = 'meteorguard-model-v2';
         
         // Normalização dos inputs (min/max para cada feature)
         this.featureRanges = {
@@ -22,7 +22,9 @@ class MeteorGuardAI {
             visibility:     { min: 0,   max: 50000 },
             uvIndex:        { min: 0,   max: 12 },
             pm25:           { min: 0,   max: 500 },
-            dangerContext:  { min: 0,   max: 3 }
+            dangerContext:  { min: 0,   max: 3 },
+            stormIndex:     { min: 0,   max: 15000 },
+            instability:    { min: 0,   max: 2000 }
         };
     }
 
@@ -34,7 +36,7 @@ class MeteorGuardAI {
 
         // Camada de entrada + 1ª camada oculta (32 neurônios)
         this.model.add(tf.layers.dense({
-            inputShape: [11], // 11 features de entrada
+            inputShape: [13], // 13 features de entrada
             units: 32,
             activation: 'relu',
             kernelInitializer: 'heNormal'
@@ -81,44 +83,48 @@ class MeteorGuardAI {
         const inputs = [];
         const outputs = [];
 
-        // ---- CENÁRIOS SEGUROS (70 amostras, balanceado) ----
-        for (let i = 0; i < 70; i++) {
+        // ---- CENÁRIOS SEGUROS (400 amostras, balanceado) ----
+        for (let i = 0; i < 400; i++) {
             inputs.push([
-                this.rand(15, 32),    // temp agradável
-                this.rand(30, 60),    // umidade normal
-                this.rand(0, 15),     // vento fraco
-                this.rand(0, 20),     // rajadas fracas
-                0,                     // sem precipitação
-                this.rand(1010, 1030),// pressão alta (estável)
-                this.rand(0, 30),     // poucas nuvens
-                this.rand(15000, 50000), // boa visibilidade
-                this.rand(1, 6),      // UV moderado
-                this.rand(0, 25),     // ar limpo
-                0                      // código: céu limpo
+                this.rand(18, 28),    // temp
+                this.rand(40, 60),    // umidade
+                this.rand(0, 15),     // vento
+                this.rand(0, 20),     // rajada
+                0,                    // chuva
+                this.rand(1012, 1025),// pressão
+                this.rand(0, 30),     // nuvens
+                this.rand(10000, 20000), // visibilidade
+                this.rand(0, 5),      // uv
+                this.rand(0, 20),     // pm25
+                0,                    // codigo clima (limpo)
+                this.rand(0, 0),      // stormIndex
+                this.rand(0, 0)       // instability
             ]);
-            outputs.push([this.rand(0, 0.15)]);
+            outputs.push([0.0]); // Risco minimo puro
         }
 
-        // ---- CENÁRIOS DE ATENÇÃO LEVE (70 amostras, balanceado) ----
-        for (let i = 0; i < 70; i++) {
+        // ---- CENÁRIOS DE ATENÇÃO LEVE (400 amostras, balanceado) ----
+        for (let i = 0; i < 400; i++) {
             inputs.push([
-                this.rand(10, 28),
-                this.rand(55, 75),    // umidade subindo
-                this.rand(10, 25),    // vento moderado
+                this.rand(10, 32),
+                this.rand(50, 75),
+                this.rand(10, 25),
                 this.rand(15, 35),
-                this.rand(0.1, 3),    // garoa leve
+                this.rand(0, 3),      // garoa
                 this.rand(1005, 1015),
-                this.rand(40, 70),    // nublado parcial
-                this.rand(8000, 15000),
-                this.rand(1, 4),
-                this.rand(15, 50),
-                1                      // código: garoa/neblina
+                this.rand(20, 60),
+                this.rand(5000, 15000),
+                this.rand(3, 7),
+                this.rand(15, 40),
+                1,                     // código: instabilidade
+                this.rand(0, 75),      // stormIndex
+                this.rand(0, 50)       // instability
             ]);
-            outputs.push([this.rand(0.2, 0.4)]);
+            outputs.push([0.25]); // Risco leve
         }
 
-        // ---- CENÁRIOS DE ATENÇÃO MODERADA (70 amostras, balanceado) ----
-        for (let i = 0; i < 70; i++) {
+        // ---- CENÁRIOS DE ATENÇÃO MODERADA (400 amostras, balanceado) ----
+        for (let i = 0; i < 400; i++) {
             inputs.push([
                 this.rand(8, 25),
                 this.rand(70, 90),    // umidade alta
@@ -130,13 +136,15 @@ class MeteorGuardAI {
                 this.rand(3000, 8000),// visibilidade reduzida
                 this.rand(0, 3),
                 this.rand(30, 80),
-                2                      // código: chuva moderada
+                2,                    // código: chuva moderada
+                this.rand(40, 300),   // stormIndex
+                this.rand(0, 150)     // instability
             ]);
-            outputs.push([this.rand(0.4, 0.65)]);
+            outputs.push([0.5]); // Risco moderado
         }
 
-        // ---- CENÁRIOS DE PERIGO (70 amostras, balanceado) ----
-        for (let i = 0; i < 70; i++) {
+        // ---- CENÁRIOS DE PERIGO (400 amostras, balanceado) ----
+        for (let i = 0; i < 400; i++) {
             inputs.push([
                 this.rand(5, 20),
                 this.rand(85, 98),    // umidade muito alta
@@ -148,27 +156,31 @@ class MeteorGuardAI {
                 this.rand(500, 3000), // visibilidade ruim
                 this.rand(0, 2),
                 this.rand(50, 150),
-                3                      // código: tempestade
+                3,                    // código: tempestade
+                this.rand(400, 2000), // stormIndex
+                this.rand(100, 400)   // instability
             ]);
-            outputs.push([this.rand(0.65, 0.85)]);
+            outputs.push([0.85]); // Risco de perigo alto
         }
 
-        // ---- CENÁRIOS DE RISCO EXTREMO (70 amostras, balanceado) ----
-        for (let i = 0; i < 70; i++) {
+        // ---- CENÁRIOS DE RISCO EXTREMO RAROS (400 amostras, balanceado) ----
+        for (let i = 0; i < 400; i++) {
             inputs.push([
-                this.rand(-5, 15),
+                this.rand(-5, 45),
                 this.rand(90, 100),   // saturação total
-                this.rand(70, 150),   // vendaval
-                this.rand(100, 200),  // rajadas destrutivas
-                this.rand(30, 100),   // chuva intensa / granizo
-                this.rand(960, 985),  // pressão muito baixa (ciclone)
+                this.rand(70, 200),   // vendaval extremo ou furacão
+                this.rand(100, 250),  // rajadas destrutivas > 180
+                this.rand(30, 150),   // chuva torrencial severa
+                this.rand(940, 985),  // pressão raramente muito baixa (ciclone extratropical)
                 100,                   // nuvens totais
-                this.rand(50, 500),   // visibilidade quase zero
+                this.rand(10, 500),   // visibilidade quase zero
                 0,
                 this.rand(100, 500),  // qualidade do ar péssima
-                3                      // código: tempestade severa
+                3,                    // código: tempestade severa
+                this.rand(2100, 15000), // stormIndex hiper elevado
+                this.rand(300, 2000)  // instability violenta
             ]);
-            outputs.push([this.rand(0.85, 1.0)]);
+            outputs.push([1.0]); // Classificação pura 100% perigo
         }
 
         return { inputs, outputs };
@@ -195,38 +207,38 @@ class MeteorGuardAI {
             console.log('[METEORGUARD AI] Nenhum modelo salvo. Iniciando treinamento...');
         }
 
-        console.log('[METEORGUARD AI] Iniciando treinamento da rede neural (350 cenários)...');
+        console.log('[METEORGUARD AI] Iniciando treinamento da rede neural (2000 cenários)...');
         
-        const data = this.generateTrainingData();
-        
-        // Normalizar os inputs para 0-1 (com clamp)
-        const normalizedInputs = data.inputs.map(row => this.normalizeInput(row));
-        
-        // Converter para tensores TensorFlow
-        const xs = tf.tensor2d(normalizedInputs);
-        const ys = tf.tensor2d(data.outputs);
+        const trainData = this.generateTrainingData();
+        const inputs = tf.tensor2d(trainData.inputs.map(row => this.normalizeInput(row)));
+        const outputs = tf.tensor2d(trainData.outputs);
 
-        // Treinar por até 60 épocas (sem early stopping bugado)
-        const history = await this.model.fit(xs, ys, {
-            epochs: 60,
-            batchSize: 16,
+        const epochs = 60;
+        
+        // Early Stopping implementation para prevenir overfitting
+        const callbacks = {
+            onEpochEnd: (epoch, logs) => {
+                const acc = (logs.accuracy !== undefined) ? logs.accuracy : (logs.acc || 0);
+                if (onProgress) {
+                    onProgress(epoch + 1, epochs, logs.loss, acc);
+                }
+            }
+        };
+
+        await this.model.fit(inputs, outputs, {
+            epochs: epochs,
+            batchSize: 32,
             validationSplit: 0.2,
             shuffle: true,
             callbacks: [
-                {
-                    onEpochEnd: async (epoch, logs) => {
-                        if (onProgress) {
-                            onProgress(epoch + 1, 60, logs);
-                        }
-                        await tf.nextFrame();
-                    }
-                }
+                callbacks,
+                tf.callbacks.earlyStopping({ monitor: 'val_loss', patience: 5 })
             ]
         });
 
         // Limpar tensores da memória
-        xs.dispose();
-        ys.dispose();
+        inputs.dispose();
+        outputs.dispose();
 
         // Salvar modelo no localStorage para próxima visita
         try {
@@ -238,31 +250,38 @@ class MeteorGuardAI {
 
         this.isReady = true;
         console.log('[METEORGUARD AI] ✅ Treinamento concluído! Rede neural operacional.');
-        
-        return history;
     }
 
     // ==========================================
     // STEP 4: Fazer predições com a rede neural
     // ==========================================
-    async predict(weatherData) {
-        if (!this.isReady || !this.model) {
-            return this.fallbackPrediction(weatherData);
+    async predict(data) {
+        if (!this.model) {
+            console.warn('[METEORGUARD AI] Modelo neural ausente. Usando algoritmo clássico Híbrido de Fallback.');
+            return this.fallbackPrediction(data);
         }
 
-        // Montar vetor de 11 features
+        // Engenharia de Features Dinâmica
+        const stormIndex = (data.windSpeed || 0) * (data.precipitation || 0);
+        const humidity = data.humidity || 50;
+        const pressureMsl = data.pressureMsl || 1013;
+        const instability = Math.max(0, (1000 - pressureMsl) * humidity);
+
+        // Vector 1x13 format (mesma ordem do treinamento)
         const inputVector = [
-            weatherData.temperature || 20,
-            weatherData.humidity || 50,
-            weatherData.windSpeed || 0,
-            weatherData.windGusts || 0,
-            weatherData.precipitation || 0,
-            weatherData.pressureMsl || 1013,
-            weatherData.cloudCover || 0,
-            weatherData.visibility || 20000,
-            weatherData.uvIndex || 3,
-            weatherData.pm25 || 10,
-            weatherData.dangerContext || 0
+            data.temperature || 20,
+            humidity,
+            data.windSpeed || 0,
+            data.windGusts || 0,
+            data.precipitation || 0,
+            pressureMsl,
+            data.cloudCover || 0,
+            data.visibility || 20000,
+            data.uvIndex || 0,
+            data.pm25 || 10,
+            data.dangerContext || 0,
+            stormIndex,
+            instability
         ];
 
         // Normalizar
@@ -277,7 +296,7 @@ class MeteorGuardAI {
         tensor.dispose();
         predTensor.dispose();
 
-        return this.interpretPrediction(riskScore, weatherData);
+        return this.interpretPrediction(riskScore, data);
     }
 
     // ==========================================
@@ -286,37 +305,42 @@ class MeteorGuardAI {
     interpretPrediction(riskScore, data) {
         const percentage = Math.round(riskScore * 100);
         
-        // Gerar análise contextual detalhada
+        // Build Contextual Analysis
         const analysis = this.generateDetailedAnalysis(riskScore, data);
         
         let level, title, icon, color;
 
+        // Fetch translations for i18n dynamic string UI logic
+        const langObj = typeof i18n !== 'undefined' ? i18n.translations[i18n.current] : null;
+
         if (riskScore < 0.2) {
             level = 'safe';
-            title = `🟢 SEGURO — Risco ${percentage}%`;
+            title = langObj && langObj.aiRiskTitleSafe ? langObj.aiRiskTitleSafe(percentage) : `🟢 SEGURO — Risco ${percentage}%`;
             icon = 'fa-shield-check';
             color = '#00ff88';
         } else if (riskScore < 0.4) {
             level = 'low-warning';
-            title = `🟡 ATENÇÃO LEVE — Risco ${percentage}%`;
+            title = langObj && langObj.aiRiskTitleWarningLow ? langObj.aiRiskTitleWarningLow(percentage) : `🟡 ATENÇÃO LEVE — Risco ${percentage}%`;
             icon = 'fa-umbrella';
             color = '#ffdf00';
         } else if (riskScore < 0.65) {
             level = 'warning';
-            title = `🟠 ATENÇÃO — Risco ${percentage}%`;
+            title = langObj && langObj.aiRiskTitleWarning ? langObj.aiRiskTitleWarning(percentage) : `🟠 ATENÇÃO — Risco ${percentage}%`;
             icon = 'fa-circle-exclamation';
             color = '#ff8800';
         } else if (riskScore < 0.85) {
             level = 'danger';
-            title = `🔴 PERIGO — Risco ${percentage}%`;
+            title = langObj && langObj.aiRiskTitleDanger ? langObj.aiRiskTitleDanger(percentage) : `🔴 PERIGO — Risco ${percentage}%`;
             icon = 'fa-triangle-exclamation';
             color = '#ff3366';
         } else {
             level = 'critical';
-            title = `🚨 RISCO EXTREMO — Risco ${percentage}%`;
+            title = langObj && langObj.aiRiskTitleCritical ? langObj.aiRiskTitleCritical(percentage) : `🚨 RISCO EXTREMO — Risco ${percentage}%`;
             icon = 'fa-skull-crossbones';
             color = '#ff0040';
         }
+
+        const formattedTime = new Date().toLocaleTimeString(typeof i18n !== 'undefined' && i18n.current === 'en' ? 'en-US' : (typeof i18n !== 'undefined' && i18n.current === 'es' ? 'es-ES' : 'pt-BR'));
 
         return {
             riskScore,
@@ -326,7 +350,7 @@ class MeteorGuardAI {
             icon,
             color,
             analysis,
-            timestamp: new Date().toLocaleTimeString('pt-BR')
+            timestamp: formattedTime
         };
     }
 
@@ -443,7 +467,7 @@ class MeteorGuardAI {
             icon: oldLogic.icon,
             color: '#00ff88',
             analysis: { alerts: [], suggestions: [oldLogic.message], details: [] },
-            timestamp: new Date().toLocaleTimeString('pt-BR')
+            timestamp: new Date().toLocaleTimeString(typeof i18n !== 'undefined' && i18n.current === 'en' ? 'en-US' : (typeof i18n !== 'undefined' && i18n.current === 'es' ? 'es-ES' : 'pt-BR'))
         };
     }
 
@@ -509,13 +533,23 @@ class MeteorGuardAI {
     // ==========================================
     // Utilidades
     // ==========================================
-    normalizeInput(inputVector) {
-        const keys = Object.keys(this.featureRanges);
-        return inputVector.map((val, i) => {
-            const range = this.featureRanges[keys[i]];
-            const normalized = (val - range.min) / (range.max - range.min);
-            return Math.max(0, Math.min(1, normalized)); // Clamp entre 0 e 1
-        });
+    normalizeInput(params) {
+        const p = this.featureRanges;
+        return [
+            Math.max(0, Math.min(1, (params[0] - p.temperature.min) / (p.temperature.max - p.temperature.min))),
+            Math.max(0, Math.min(1, (params[1] - p.humidity.min) / (p.humidity.max - p.humidity.min))),
+            Math.max(0, Math.min(1, (params[2] - p.windSpeed.min) / (p.windSpeed.max - p.windSpeed.min))),
+            Math.max(0, Math.min(1, (params[3] - p.windGusts.min) / (p.windGusts.max - p.windGusts.min))),
+            Math.max(0, Math.min(1, (params[4] - p.precipitation.min) / (p.precipitation.max - p.precipitation.min))),
+            Math.max(0, Math.min(1, (params[5] - p.pressureMsl.min) / (p.pressureMsl.max - p.pressureMsl.min))),
+            Math.max(0, Math.min(1, (params[6] - p.cloudCover.min) / (p.cloudCover.max - p.cloudCover.min))),
+            Math.max(0, Math.min(1, (params[7] - p.visibility.min) / (p.visibility.max - p.visibility.min))),
+            Math.max(0, Math.min(1, (params[8] - p.uvIndex.min) / (p.uvIndex.max - p.uvIndex.min))),
+            Math.max(0, Math.min(1, (params[9] - p.pm25.min) / (p.pm25.max - p.pm25.min))),
+            Math.max(0, Math.min(1, (params[10] - p.dangerContext.min) / (p.dangerContext.max - p.dangerContext.min))),
+            Math.max(0, Math.min(1, (params[11] - p.stormIndex.min) / (p.stormIndex.max - p.stormIndex.min))),
+            Math.max(0, Math.min(1, (params[12] - p.instability.min) / (p.instability.max - p.instability.min)))
+        ];
     }
 
     rand(min, max) {

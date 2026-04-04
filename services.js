@@ -90,30 +90,41 @@ class WeatherService {
      */
     static getWeatherInterpretation(code) {
         const interpretation = {
-            0: { desc: 'Céu Limpo', icon: 'fa-sun', dangerContext: 0 },
-            1: { desc: 'Predominantemente Limpo', icon: 'fa-cloud-sun', dangerContext: 0 },
-            2: { desc: 'Parcialmente Nublado', icon: 'fa-cloud-sun', dangerContext: 0 },
-            3: { desc: 'Nublado', icon: 'fa-cloud', dangerContext: 0 },
-            45: { desc: 'Neblina', icon: 'fa-smog', dangerContext: 1 },
-            48: { desc: 'Névoa de Geada', icon: 'fa-smog', dangerContext: 1 },
-            51: { desc: 'Garoa Leve', icon: 'fa-cloud-rain', dangerContext: 1 },
-            53: { desc: 'Garoa Moderada', icon: 'fa-cloud-rain', dangerContext: 1 },
-            55: { desc: 'Garoa Densa', icon: 'fa-cloud-showers-heavy', dangerContext: 2 },
-            61: { desc: 'Chuva Leve', icon: 'fa-cloud-rain', dangerContext: 1 },
-            63: { desc: 'Chuva Moderada', icon: 'fa-cloud-showers-heavy', dangerContext: 2 },
-            65: { desc: 'Chuva Forte', icon: 'fa-cloud-showers-water', dangerContext: 3 },
-            71: { desc: 'Neve Leve', icon: 'fa-snowflake', dangerContext: 1 },
-            73: { desc: 'Neve Moderada', icon: 'fa-snowflake', dangerContext: 2 },
-            75: { desc: 'Neve Densa', icon: 'fa-snowflake', dangerContext: 3 },
-            80: { desc: 'Pancada de Chuva Leve', icon: 'fa-cloud-showers-heavy', dangerContext: 1 },
-            81: { desc: 'Pancada de Chuva Moderada', icon: 'fa-cloud-showers-water', dangerContext: 2 },
-            82: { desc: 'Pancada de Chuva Violenta', icon: 'fa-cloud-showers-water', dangerContext: 3 },
-            95: { desc: 'Tempestade de Raios', icon: 'fa-cloud-bolt', dangerContext: 3 },
-            96: { desc: 'Tempestade de Granizo', icon: 'fa-cloud-meatball', dangerContext: 3 },
-            99: { desc: 'Tempestade Severa de Granizo', icon: 'fa-cloud-meatball', dangerContext: 3 }
+            0: { icon: 'fa-sun', dangerContext: 0 },
+            1: { icon: 'fa-cloud-sun', dangerContext: 0 },
+            2: { icon: 'fa-cloud-sun', dangerContext: 0 },
+            3: { icon: 'fa-cloud', dangerContext: 0 },
+            45: { icon: 'fa-smog', dangerContext: 1 },
+            48: { icon: 'fa-smog', dangerContext: 1 },
+            51: { icon: 'fa-cloud-rain', dangerContext: 1 },
+            53: { icon: 'fa-cloud-rain', dangerContext: 1 },
+            55: { icon: 'fa-cloud-showers-heavy', dangerContext: 2 },
+            61: { icon: 'fa-cloud-rain', dangerContext: 1 },
+            63: { icon: 'fa-cloud-showers-heavy', dangerContext: 2 },
+            65: { icon: 'fa-cloud-showers-water', dangerContext: 3 },
+            71: { icon: 'fa-snowflake', dangerContext: 1 },
+            73: { icon: 'fa-snowflake', dangerContext: 2 },
+            75: { icon: 'fa-snowflake', dangerContext: 3 },
+            80: { icon: 'fa-cloud-showers-heavy', dangerContext: 1 },
+            81: { icon: 'fa-cloud-showers-water', dangerContext: 2 },
+            82: { icon: 'fa-cloud-showers-water', dangerContext: 3 },
+            95: { icon: 'fa-cloud-bolt', dangerContext: 3 },
+            96: { icon: 'fa-cloud-meatball', dangerContext: 3 },
+            99: { icon: 'fa-cloud-meatball', dangerContext: 3 }
         };
         
-        return interpretation[code] || { desc: 'Desconhecido', icon: 'fa-cloud', dangerContext: 0 };
+        const data = interpretation[code] || { icon: 'fa-cloud', dangerContext: 0 };
+        
+        // Fetch translated description
+        const weatherDict = typeof i18n !== 'undefined' ? i18n.t('weather') : null;
+        let desc = 'Desconhecido';
+        if (weatherDict && weatherDict[code]) {
+            desc = weatherDict[code];
+        } else if (typeof i18n !== 'undefined') {
+            desc = i18n.current === 'en' ? 'Unknown' : (i18n.current === 'es' ? 'Desconocido' : 'Desconhecido');
+        }
+        
+        return { desc, icon: data.icon, dangerContext: data.dangerContext };
     }
 }
 
