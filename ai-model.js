@@ -206,32 +206,17 @@ class MeteorGuardAI {
         const xs = tf.tensor2d(normalizedInputs);
         const ys = tf.tensor2d(data.outputs);
 
-        // Early stopping para evitar overfitting
-        const earlyStopping = tf.callbacks.earlyStopping({
-            monitor: 'val_loss',
-            patience: 8
-        });
-
-        // Treinar por até 60 épocas (early stopping pode parar antes)
+        // Treinar por até 60 épocas (sem early stopping bugado)
         const history = await this.model.fit(xs, ys, {
             epochs: 60,
             batchSize: 16,
             validationSplit: 0.2,
             shuffle: true,
             callbacks: [
-                earlyStopping,
                 {
                     onEpochEnd: async (epoch, logs) => {
-                        this.trainingLog.push({
-                            epoch: epoch + 1,
-                            loss: logs.loss.toFixed(4),
-                            accuracy: ((logs.accuracy || logs.acc || 0) * 100).toFixed(1)
-                        });
                         if (onProgress) {
-                            onProgress(epoch + 1, 60, {
-                                loss: logs.loss,
-                                acc: logs.accuracy || logs.acc || 0
-                            });
+                            onProgress(epoch + 1, 60, logs);
                         }
                         await tf.nextFrame();
                     }

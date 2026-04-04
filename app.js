@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await meteorGuardAI.train((epoch, total, logs) => {
             const percent = Math.round((epoch / total) * 100);
             DOM.aiProgressFill.style.width = `${percent}%`;
-            DOM.aiTrainingStatus.textContent = `Época ${epoch}/${total} — Perda: ${logs.loss.toFixed(4)}`;
+            DOM.aiTrainingStatus.textContent = i18n.t('aiProcessing') + `... ${percent}%`;
         });
 
         // Training complete! Update UI
