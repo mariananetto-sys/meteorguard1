@@ -1430,3 +1430,88 @@ section {
         padding: 18px;
     }
 }
+
+/* ==========================================
+   AI v4.0 MAX: EXPLAINABILITY & FACTORS
+   ========================================== */
+.ai-risk-factors-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ai-risk-factors-container .section-label {
+    font-size: 0.7rem;
+    color: var(--neon-green);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.8;
+}
+
+.ai-factors-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.factor-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.factor-name {
+    width: 110px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.factor-bar-container {
+    flex-grow: 1;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.factor-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+    border-radius: 10px;
+    width: 0; /* Animated via JS */
+    transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.factor-value {
+    width: 40px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.confidence-chip {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    margin-left: 8px;
+    vertical-align: middle;
+}

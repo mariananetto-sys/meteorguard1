@@ -47,6 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
         aiAlerts: document.getElementById('aiAlerts'),
         aiSuggestions: document.getElementById('aiSuggestions'),
         aiDetails: document.getElementById('aiDetails'),
+        aiRiskFactors: document.getElementById('aiRiskFactors'),
+        aiFactorsList: document.getElementById('aiFactorsList'),
         aiTimestamp: document.getElementById('aiTimestamp'),
         currentRain: document.getElementById('currentRain'),
         dailyRain: document.getElementById('dailyRain'),
@@ -315,8 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.riskIcon.className = `fa-solid ${prediction.icon}`;
         DOM.riskTitle.textContent = prediction.title;
 
-        // Render detailed analysis (from neural network)
-        renderAIAnalysis(prediction.analysis);
+        // Render detailed analysis (from neural network v4.0 MAX)
+        renderAIAnalysis(prediction);
 
         // IA gera o texto original usando o motor NLG (passa as analises tb agora)
         const aiText = meteorGuardAI.generateText(aiInput, prediction.riskScore, prediction.analysis);
@@ -329,7 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.aiTimestamp.textContent = `${i18n.t('aiLastAnalysis')}: ${prediction.timestamp}`;
     }
 
-    function renderAIAnalysis(analysis) {
+    function renderAIAnalysis(prediction) {
+        const analysis = prediction.analysis;
         DOM.aiAnalysisSection.classList.remove('hidden');
         
         // Alerts (red)
@@ -349,6 +352,27 @@ document.addEventListener('DOMContentLoaded', () => {
         analysis.details.forEach(det => {
             DOM.aiDetails.innerHTML += `<div class="ai-detail-item">${det}</div>`;
         });
+
+        // AI v4.0 MAX: Explainability (SHAP Factors)
+        if (prediction.featureImportance && prediction.featureImportance.length > 0) {
+            DOM.aiRiskFactors.classList.remove('hidden');
+            DOM.aiFactorsList.innerHTML = '';
+            
+            prediction.featureImportance.forEach(f => {
+                const pct = Math.min(100, Math.round(f.score * 100 * 2.5)); // Amplicar visualmente o peso
+                DOM.aiFactorsList.innerHTML += `
+                    <div class="factor-item">
+                        <span class="factor-name">${f.feature}</span>
+                        <div class="factor-bar-container">
+                            <div class="factor-bar-fill" style="width: ${pct}%"></div>
+                        </div>
+                        <span class="factor-value">${pct}%</span>
+                    </div>
+                `;
+            });
+        } else {
+            DOM.aiRiskFactors.classList.add('hidden');
+        }
     }
 
     // -----------------------------------
