@@ -45,10 +45,15 @@ export default function handler(req, res) {
 
     if (temperature >= 45 || temperature <= -15) riskScore += 0.85;
     else if (temperature > 38 || temperature < 0) riskScore += 0.3;
-    if (stormIndex > 500) riskScore += 0.4;
+    if (stormIndex > 5000) riskScore += 0.9;
+    else if (stormIndex > 2000) riskScore += 0.6;
+    else if (stormIndex > 500) riskScore += 0.4;
     else if (stormIndex > 200) riskScore += 0.2;
     
-    if (instability > 1000) riskScore += 0.3;
+    if (windSpeed > 100) riskScore += 0.3;
+
+    if (instability > 2000) riskScore += 0.6;
+    else if (instability > 1000) riskScore += 0.3;
     if (pm25 > 100) riskScore += 0.15;
 
     // Calibração de limite simulando a regressão que fizemos no Front-end (0.0 a 1.0)
