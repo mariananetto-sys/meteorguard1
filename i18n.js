@@ -29,13 +29,13 @@ const i18n = {
             visibility: 'Visibilidade',
 
             // AI Panel
-            aiTitle: 'MeteorGuard v5.0 MAX',
+            aiTitle: 'MeteorGuard AI',
             aiProcessing: 'ANALISANDO...',
-            aiOnline: 'PRONTO!',
-            aiTraining: 'Sincronizando Motor v5.0 MAX — ULTIMATE EDITION...',
-            aiDisclaimer: '<b>Nota:</b> Modelo de classificação de risco por IA. Não simula atmosfera física (ECMWF/GFS). Foco no estado atual.',
-            aiEpoch: (e, t) => `Processando lote ${e}/${t} — Identificando tendências...`,
-            aiLastAnalysis: 'Cérebro Autónomo v5.0 MAX — ULTIMATE',
+            aiOnline: 'Monitoramento Ativo',
+            aiTraining: 'Sincronizando Inteligência Regional...',
+            aiDisclaimer: '<b>Nota:</b> Análise baseada em IA para apoio à decisão. Foco no estado atual.',
+            aiEpoch: (e, t) => `Processando dados ${e}/${t}...`,
+            aiLastAnalysis: 'Última análise da IA',
             currentRain: 'Precipitação Atual',
             dailyRain: 'Chuva Acumulada Dia',
 
@@ -229,13 +229,13 @@ const i18n = {
             visibility: 'Visibility',
 
             // AI Panel
-            aiTitle: 'MeteorGuard v5.0 MAX',
+            aiTitle: 'MeteorGuard AI',
             aiProcessing: 'ANALYZING...',
-            aiOnline: 'ULTIMATE MAX READY!',
-            aiTraining: 'Syncing v5.0 MAX — ULTIMATE Engine...',
-            aiDisclaimer: '<b>Note:</b> AI risk classification model. Does not simulate physical atmosphere (ECMWF/GFS). Focus on current state.',
-            aiEpoch: (e, t) => `Processing Ultimate Batch ${e}/${t} — Finalizing Logic...`,
-            aiLastAnalysis: 'Ultimate Autonomous Brain v5.0 MAX',
+            aiOnline: 'Smart Monitoring Active',
+            aiTraining: 'Syncing Regional Intelligence...',
+            aiDisclaimer: '<b>Note:</b> AI-based decision support. Focus on current state.',
+            aiEpoch: (e, t) => `Processing data ${e}/${t}...`,
+            aiLastAnalysis: 'Last AI update',
             currentRain: 'Current Precipitation',
             dailyRain: 'Daily Accumulated Rain',
 
@@ -421,13 +421,13 @@ const i18n = {
             visibility: 'Visibilidad',
 
             // AI Panel
-            aiTitle: 'MeteorGuard v5.0 MAX',
+            aiTitle: 'MeteorGuard AI',
             aiProcessing: 'ANALIZANDO...',
-            aiOnline: '¡ULTIMATE MAX LISTO!',
-            aiTraining: 'Sincronizando Motor v5.0 MAX — ULTIMATE...',
-            aiDisclaimer: '<b>Nota:</b> Modelo de clasificación de risco por IA. No simula atmósfera física (ECMWF/GFS). Enfoque en estado atual.',
-            aiEpoch: (e, t) => `Procesando Lote Ultimate ${e}/${t}...`,
-            aiLastAnalysis: 'Cerebro Autónomo v5.0 MAX',
+            aiOnline: 'Monitoreo Inteligente',
+            aiTraining: 'Sincronizando IA Regional...',
+            aiDisclaimer: '<b>Nota:</b> Apoyo a la decisión basado en IA. Enfoque en estado actual.',
+            aiEpoch: (e, t) => `Procesando datos ${e}/${t}...`,
+            aiLastAnalysis: 'Última actualización de IA',
             currentRain: 'Precipitación Actual',
             dailyRain: 'Lluvia Acumulada Día',
 

@@ -46,7 +46,7 @@ class MeteorGuardAI {
         };
 
         console.log('╔════════════════════════════════════════════════════════════╗');
-        console.log('║  🧠 METEORGUARD AI v5.0 MAX — ULTIMATE EDITION           ║');
+        console.log('║  🧠 MeteorGuard AI — Sistema de Monitoramento Ativo      ║');
         console.log('╚════════════════════════════════════════════════════════════╝');
     }
 
@@ -320,3 +320,6 @@ class MeteorGuardAI {
     getRiskTitle(risk) { if (risk > 0.8) return '🚨 RISCO EXTREMO'; if (risk > 0.6) return '🔴 PERIGO'; if (risk > 0.4) return '🟠 ATENÇÃO'; return '🟢 SEGURO'; }
     getRiskColor(risk) { if (risk > 0.8) return '#ff0040'; if (risk > 0.6) return '#ff3366'; if (risk > 0.4) return '#ff8800'; return '#00ff88'; }
 }
+
+// Inst�ncia Global da IA
+const meteorGuardAI = new MeteorGuardAI();
