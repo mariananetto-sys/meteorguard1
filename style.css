@@ -1515,3 +1515,32 @@ section {
     margin-left: 8px;
     vertical-align: middle;
 }
+
+/* v4.1 PRO: AI Metadata Footer Styling */
+.ai-meta-footer {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+}
+
+.ai-meta-footer span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ai-meta-footer i {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    color: var(--accent-color);
+}
+
+.risk-indicator.critical .ai-meta-footer { border-top-color: rgba(255, 0, 64, 0.2); }
+.risk-indicator.danger .ai-meta-footer { border-top-color: rgba(255, 51, 102, 0.2); }
+.risk-indicator.warning .ai-meta-footer { border-top-color: rgba(255, 136, 0, 0.2); }
+.risk-indicator.safe .ai-meta-footer { border-top-color: rgba(0, 255, 136, 0.2); }
