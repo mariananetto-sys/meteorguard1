@@ -141,11 +141,8 @@
                     throw new Error(data.error || 'Erro Crítico na Chamada');
                 }
 
-                // 4. Se deu bom, injeta a Resposta em Formato de Chat
-                let aiText = `✅ <b>${data.auth}</b><br><br>`;
-                aiText += `Nível Extrapolado: <b style="text-transform:uppercase;">${data.prediction.riskLevel}</b> (Score: ${data.prediction.riskPercentage}%)<br>`;
-                aiText += `Índice de Tempestade Calculado pelo Backend: ${data.computedFeatures.stormIndex}<br><br>`;
-                aiText += `💬 <i>"${data.prediction.analysis}"</i>`;
+                // 4. Se deu bom, injeta a Resposta Limpa e Pura em Formato de Chat
+                let aiText = `${data.prediction.analysis}`;
 
                 addMessage(aiText, 'ai');
 
