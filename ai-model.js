@@ -338,85 +338,89 @@ class MeteorGuardAI {
         const suggestions = [];
         const details = [];
 
+        // Obter objeto de contexto atual do i18n
+        const langObj = i18n.translations[i18n.current] || i18n.translations.pt;
+        const ctx = langObj.aiContext || i18n.translations.pt.aiContext;
+
         // --- Análise de Temperatura ---
         if (data.temperature > 40) {
-            alerts.push('🌡️ Temperatura extremamente alta detectada. Risco de desidratação e insolação.');
-            suggestions.push('Hidrate-se a cada 30 minutos. Evite exposição direta ao sol entre 10h-16h.');
+            alerts.push(ctx.tempHighAlert);
+            suggestions.push(ctx.tempHighSugg);
         } else if (data.temperature < 5) {
-            alerts.push('❄️ Temperatura muito baixa. Risco de hipotermia em exposição prolongada.');
-            suggestions.push('Use roupas em camadas. Proteja extremidades (mãos, pés, orelhas).');
+            alerts.push(ctx.tempLowAlert);
+            suggestions.push(ctx.tempLowSugg);
         }
 
         // --- Análise de Vento ---
         if (data.windGusts > 90) {
-            alerts.push('🌪️ ALERTA DEFESA CIVIL: Rajadas destrutivas acima de 90 km/h. Risco de destelhamento e queda de árvores.');
-            suggestions.push('Permaneça em abrigo seguro. Afaste-se de janelas e estruturas frágeis.');
+            alerts.push(ctx.windCritAlert);
+            suggestions.push(ctx.windCritSugg);
         } else if (data.windSpeed > 50) {
-            alerts.push('💨 Ventos fortes detectados. Objetos soltos podem ser arremessados.');
-            suggestions.push('Recolha objetos leves de varandas e áreas externas.');
+            alerts.push(ctx.windHighAlert);
+            suggestions.push(ctx.windHighSugg);
         } else if (data.windSpeed > 30) {
-            suggestions.push('Vento moderado. Cuidado com guarda-chuvas — podem inverter.');
+            suggestions.push(ctx.windModSugg);
         }
 
         // --- Análise de Chuva ---
         if (data.precipitation > 30) {
-            alerts.push('🌊 ALERTA MÁXIMO: Precipitação intensa (>' + data.precipitation.toFixed(1) + 'mm/h). Risco imediato de alagamentos e deslizamentos.');
-            suggestions.push('NÃO tente atravessar vias alagadas a pé ou de carro. Procure terreno elevado.');
+            alerts.push(ctx.rainCritAlert(data.precipitation.toFixed(1)));
+            suggestions.push(ctx.rainCritSugg);
         } else if (data.precipitation > 10) {
-            alerts.push('🌧️ Chuva forte em andamento. Bueiros podem transbordar em áreas urbanas.');
-            suggestions.push('Evite áreas de encosta e margem de rios. Leve guarda-chuva reforçado.');
+            alerts.push(ctx.rainHighAlert);
+            suggestions.push(ctx.rainHighSugg);
         } else if (data.precipitation > 2) {
-            suggestions.push('☂️ Chuva moderada. Leve guarda-chuva hoje.');
+            suggestions.push(ctx.rainModSugg);
         } else if (data.precipitation > 0) {
-            suggestions.push('🌦️ Garoa detectada. Um casaco impermeável é suficiente.');
+            suggestions.push(ctx.rainLowSugg);
         }
 
         // --- Análise de Pressão Atmosférica ---
         if (data.pressureMsl < 990) {
-            alerts.push('📉 Pressão atmosférica muito baixa (' + data.pressureMsl?.toFixed(0) + ' hPa). Indica formação de sistema ciclônico próximo.');
-            details.push('Sistemas de baixa pressão geralmente trazem instabilidade severa nas próximas horas.');
+            alerts.push(ctx.pressLowAlert(data.pressureMsl?.toFixed(0)));
+            details.push(ctx.pressLowDet);
         } else if (data.pressureMsl < 1005) {
-            details.push('📊 Pressão em queda (' + data.pressureMsl?.toFixed(0) + ' hPa). Tendência de piora no tempo.');
+            details.push(ctx.pressDropDet(data.pressureMsl?.toFixed(0)));
         } else if (data.pressureMsl > 1020) {
-            details.push('📊 Pressão alta e estável (' + data.pressureMsl?.toFixed(0) + ' hPa). Bom indicador de tempo firme.');
+            details.push(ctx.pressHighDet(data.pressureMsl?.toFixed(0)));
         }
 
         // --- Análise de Visibilidade ---
         if (data.visibility < 500) {
-            alerts.push('🌫️ Visibilidade crítica abaixo de 500m. Risco extremo para motoristas.');
-            suggestions.push('Ligue faróis baixos (nunca o alto na neblina). Reduza velocidade drasticamente.');
+            alerts.push(ctx.visCritAlert);
+            suggestions.push(ctx.visCritSugg);
         } else if (data.visibility < 2000) {
-            suggestions.push('🌫️ Visibilidade reduzida. Dirija com atenção redobrada.');
+            suggestions.push(ctx.visLowSugg);
         }
 
         // --- Análise de Qualidade do Ar ---
         if (data.pm25 > 150) {
-            alerts.push('😷 Qualidade do ar PÉSSIMA (PM2.5: ' + data.pm25?.toFixed(0) + ' µg/m³). Nocivo para todos os grupos.');
-            suggestions.push('Use máscara N95/PFF2 ao sair. Evite atividade física ao ar livre.');
+            alerts.push(ctx.airCritAlert(data.pm25?.toFixed(0)));
+            suggestions.push(ctx.airCritSugg);
         } else if (data.pm25 > 55) {
-            details.push('🏭 Qualidade do ar insatisfatória (PM2.5: ' + data.pm25?.toFixed(0) + ' µg/m³). Grupos sensíveis devem ter cautela.');
+            details.push(ctx.airWarnDet(data.pm25?.toFixed(0)));
         } else if (data.pm25 <= 25) {
-            details.push('🍃 Ar limpo e saudável (PM2.5: ' + data.pm25?.toFixed(0) + ' µg/m³).');
+            details.push(ctx.airGoodDet(data.pm25?.toFixed(0)));
         }
 
         // --- Análise UV ---
         if (data.uvIndex >= 11) {
-            alerts.push('☀️ Índice UV EXTREMO (' + data.uvIndex + '). Queimaduras em menos de 10 minutos.');
-            suggestions.push('Aplique protetor solar FPS 50+. Use chapéu de aba larga e óculos escuros.');
+            alerts.push(ctx.uvCritAlert(data.uvIndex));
+            suggestions.push(ctx.uvCritSugg);
         } else if (data.uvIndex >= 8) {
-            suggestions.push('☀️ UV muito alto (' + data.uvIndex + '). Protetor solar é essencial hoje.');
+            suggestions.push(ctx.uvWarnSugg(data.uvIndex));
         }
 
         // --- Cobertura de Nuvens ---
         if (data.cloudCover > 90) {
-            details.push('☁️ Céu totalmente encoberto (' + data.cloudCover + '%). Sem aberturas de sol previstas.');
+            details.push(ctx.cloudHighDet(data.cloudCover));
         } else if (data.cloudCover < 20) {
-            details.push('☀️ Céu predominantemente limpo (' + data.cloudCover + '% de nuvens).');
+            details.push(ctx.cloudLowDet(data.cloudCover));
         }
 
         // Se não tem nenhum alerta ou sugestão, gerar mensagem positiva
         if (alerts.length === 0 && suggestions.length === 0) {
-            suggestions.push('✅ Condições ideais para atividades ao ar livre. Aproveite o dia!');
+            suggestions.push(ctx.allClearSugg);
         }
 
         return { alerts, suggestions, details };
@@ -447,264 +451,52 @@ class MeteorGuardAI {
     // MOTOR NLG — Geração de Texto Original
     // A IA compõe frases únicas analisando dados
     // ==========================================
-    generateText(data, riskScore) {
+    generateText(data, riskScore, analysis) {
+        // Obter objeto de contexto atual do i18n
+        const langObj = i18n.translations[i18n.current] || i18n.translations.pt;
+        const ctx = langObj.aiContext || i18n.translations.pt.aiContext;
         const percentage = Math.round(riskScore * 100);
-        const observations = [];
-
-        // --- FASE 1: Analisar cada parâmetro e gerar observações ---
-
-        // Temperatura
-        const temp = data.temperature || 20;
-        if (temp > 38) {
-            observations.push({ weight: 9, text: this.pick([
-                `a temperatura chegou a ${temp.toFixed(1)}°C, nível perigoso para a saúde`,
-                `com ${temp.toFixed(1)}°C, o calor extremo exige atenção redobrada`,
-                `os ${temp.toFixed(1)}°C registrados representam risco de desidratação e insolação`
-            ])});
-        } else if (temp > 32) {
-            observations.push({ weight: 5, text: this.pick([
-                `a temperatura está em ${temp.toFixed(1)}°C, acima do confortável`,
-                `faz calor com ${temp.toFixed(1)}°C no momento`,
-                `os termômetros marcam ${temp.toFixed(1)}°C na região`
-            ])});
-        } else if (temp < 5) {
-            observations.push({ weight: 8, text: this.pick([
-                `a temperatura caiu para ${temp.toFixed(1)}°C, frio intenso na região`,
-                `com apenas ${temp.toFixed(1)}°C, o frio pode ser perigoso para quem ficar exposto`
-            ])});
-        } else if (temp < 15) {
-            observations.push({ weight: 4, text: this.pick([
-                `a temperatura está em ${temp.toFixed(1)}°C, um pouco fria para a época`,
-                `com ${temp.toFixed(1)}°C, vale a pena levar um agasalho`
-            ])});
-        } else {
-            observations.push({ weight: 2, text: this.pick([
-                `a temperatura está agradável em ${temp.toFixed(1)}°C`,
-                `com ${temp.toFixed(1)}°C, o clima está confortável`,
-                `a temperatura de ${temp.toFixed(1)}°C é ideal para o dia`
-            ])});
-        }
-
-        // Umidade
-        const hum = data.humidity || 50;
-        if (hum > 90) {
-            observations.push({ weight: 6, text: this.pick([
-                `a umidade do ar está em ${hum}%, deixando o ambiente muito abafado`,
-                `com ${hum}% de umidade, a sensação de calor aumenta bastante`
-            ])});
-        } else if (hum < 30) {
-            observations.push({ weight: 6, text: this.pick([
-                `a umidade do ar está em apenas ${hum}%, o que pode causar desconforto respiratório`,
-                `com ${hum}% de umidade, o ar seco pode provocar sangramento nasal e irritação na garganta`
-            ])});
-        } else {
-            observations.push({ weight: 1, text: this.pick([
-                `a umidade está em ${hum}%, normal para o período`,
-                `a umidade do ar marca ${hum}%`
-            ])});
-        }
-
-        // Vento
-        const wind = data.windSpeed || 0;
-        const gusts = data.windGusts || 0;
-        if (gusts > 90) {
-            observations.push({ weight: 10, text: this.pick([
-                `as rajadas de vento chegam a ${gusts.toFixed(1)} km/h, podendo derrubar árvores e arrancar telhas`,
-                `rajadas de ${gusts.toFixed(1)} km/h foram registradas — vento com potencial destrutivo`
-            ])});
-        } else if (wind > 50) {
-            observations.push({ weight: 8, text: this.pick([
-                `o vento está forte em ${wind.toFixed(1)} km/h com rajadas de ${gusts.toFixed(1)} km/h`,
-                `ventos de ${wind.toFixed(1)} km/h estão varrendo a região com força`
-            ])});
-        } else if (wind > 25) {
-            observations.push({ weight: 4, text: this.pick([
-                `sopram ventos de ${wind.toFixed(1)} km/h, moderados mas perceptíveis`,
-                `o vento está em ${wind.toFixed(1)} km/h — cuidado com guarda-chuvas`
-            ])});
-        } else {
-            observations.push({ weight: 1, text: this.pick([
-                `o vento está calmo em ${wind.toFixed(1)} km/h`,
-                `pouco vento na região, apenas ${wind.toFixed(1)} km/h`
-            ])});
-        }
-
-        // Precipitação
-        const rain = data.precipitation || 0;
-        if (rain > 30) {
-            observations.push({ weight: 10, text: this.pick([
-                `a chuva está torrencial com ${rain.toFixed(1)} mm/h — risco real de alagamentos e deslizamentos`,
-                `chove ${rain.toFixed(1)} mm/h, nível de emergência segundo a Defesa Civil`
-            ])});
-        } else if (rain > 10) {
-            observations.push({ weight: 7, text: this.pick([
-                `a chuva é forte com ${rain.toFixed(1)} mm/h, podendo causar alagamentos pontuais`,
-                `está chovendo ${rain.toFixed(1)} mm/h — evite áreas de encosta e margens de rio`
-            ])});
-        } else if (rain > 2) {
-            observations.push({ weight: 5, text: this.pick([
-                `está chovendo moderadamente, ${rain.toFixed(1)} mm/h`,
-                `a chuva marca ${rain.toFixed(1)} mm/h — leve guarda-chuva se for sair`
-            ])});
-        } else if (rain > 0) {
-            observations.push({ weight: 3, text: this.pick([
-                `há uma garoa leve de ${rain.toFixed(1)} mm/h na região`,
-                `chove fino, apenas ${rain.toFixed(1)} mm/h por enquanto`
-            ])});
-        }
-
-        // Pressão
-        const pressure = data.pressureMsl || 1013;
-        if (pressure < 990) {
-            observations.push({ weight: 8, text: this.pick([
-                `a pressão atmosférica despencou para ${pressure.toFixed(0)} hPa, sinal de tempestade se formando`,
-                `com ${pressure.toFixed(0)} hPa de pressão, há forte instabilidade no ar`
-            ])});
-        } else if (pressure < 1005) {
-            observations.push({ weight: 4, text: this.pick([
-                `a pressão está em queda (${pressure.toFixed(0)} hPa), o que pode indicar chuva nas próximas horas`,
-                `o barômetro marca ${pressure.toFixed(0)} hPa — tendência de piora`
-            ])});
-        } else if (pressure > 1025) {
-            observations.push({ weight: 2, text: this.pick([
-                `a pressão está estável em ${pressure.toFixed(0)} hPa, indicando tempo firme`,
-                `com ${pressure.toFixed(0)} hPa, a atmosfera está bem estável`
-            ])});
-        }
-
-        // Visibilidade
-        const vis = data.visibility || 20000;
-        if (vis < 500) {
-            observations.push({ weight: 9, text: this.pick([
-                `a visibilidade é de apenas ${(vis / 1000).toFixed(1)} km — neblina densa ou chuva forte impedem a visão`,
-                `com ${(vis / 1000).toFixed(1)} km de visibilidade, dirigir é extremamente perigoso`
-            ])});
-        } else if (vis < 3000) {
-            observations.push({ weight: 5, text: this.pick([
-                `a visibilidade está reduzida para ${(vis / 1000).toFixed(1)} km — atenção no trânsito`,
-                `há neblina reduzindo a visibilidade para ${(vis / 1000).toFixed(1)} km`
-            ])});
-        }
-
-        // UV
-        const uv = data.uvIndex || 0;
-        if (uv >= 11) {
-            observations.push({ weight: 7, text: this.pick([
-                `o índice UV está extremo em ${uv.toFixed(1)} — é possível se queimar em menos de 10 minutos`,
-                `UV em ${uv.toFixed(1)}: protetor solar FPS 50+ e chapéu são indispensáveis`
-            ])});
-        } else if (uv >= 8) {
-            observations.push({ weight: 5, text: this.pick([
-                `o UV está muito alto em ${uv.toFixed(1)} — use protetor solar`,
-                `com UV ${uv.toFixed(1)}, a radiação solar pode causar danos à pele em poucos minutos`
-            ])});
-        }
-
-        // PM2.5
-        const pm = data.pm25 || 10;
-        if (pm > 150) {
-            observations.push({ weight: 8, text: this.pick([
-                `a qualidade do ar é péssima, com PM2.5 em ${pm.toFixed(0)} µg/m³ — prejudicial para todos`,
-                `o ar está poluído com ${pm.toFixed(0)} µg/m³ de partículas finas — use máscara ao sair`
-            ])});
-        } else if (pm > 55) {
-            observations.push({ weight: 5, text: this.pick([
-                `a qualidade do ar não está boa (PM2.5: ${pm.toFixed(0)} µg/m³)`,
-                `o nível de poluição está elevado com PM2.5 em ${pm.toFixed(0)} µg/m³`
-            ])});
-        } else if (pm <= 25) {
-            observations.push({ weight: 1, text: this.pick([
-                `o ar está limpo e saudável (PM2.5: ${pm.toFixed(0)} µg/m³)`,
-                `a qualidade do ar é boa com PM2.5 em ${pm.toFixed(0)} µg/m³`
-            ])});
-        }
-
-        // Nuvens
-        const clouds = data.cloudCover || 0;
-        if (clouds > 90) {
-            observations.push({ weight: 2, text: this.pick([
-                `o céu está totalmente encoberto, ${clouds}% coberto por nuvens`,
-                `não há aberturas no céu — ${clouds}% de cobertura de nuvens`
-            ])});
-        } else if (clouds < 15) {
-            observations.push({ weight: 1, text: this.pick([
-                `o céu está limpo e aberto com apenas ${clouds}% de nuvens`,
-                `praticamente sem nuvens (${clouds}%), sol predominante`
-            ])});
-        }
-
-        // --- FASE 2: Ordenar por relevância ---
-        observations.sort((a, b) => b.weight - a.weight);
-
-        // --- FASE 3: Compor o texto ---
-        const topObs = observations.slice(0, 3);
 
         let intro;
-        if (riskScore < 0.2) {
-            intro = this.pick([
-                'Condições climáticas favoráveis no momento.',
-                'O tempo está bom e estável na região.',
-                'Sem alertas meteorológicos para agora.',
-                'Boletim climático: tudo tranquilo.'
-            ]);
-        } else if (riskScore < 0.4) {
-            intro = this.pick([
-                'Algumas condições merecem atenção.',
-                'O tempo apresenta leve instabilidade.',
-                'Há pontos de atenção no clima da região.',
-                'Boletim com ressalvas para as próximas horas.'
-            ]);
-        } else if (riskScore < 0.65) {
-            intro = this.pick([
-                'Atenção: condições climáticas adversas na região.',
-                'O tempo está instável e requer cautela.',
-                'Alerta meteorológico moderado em vigor.'
-            ]);
-        } else {
-            intro = this.pick([
-                'ALERTA: condições climáticas perigosas na região.',
-                'Situação meteorológica crítica em andamento.',
-                'Alerta de emergência climática ativo.'
-            ]);
-        }
-
-        const connectors = [' Além disso, ', ' Também, ', ' No mais, ', ' E ainda, '];
+        if (riskScore < 0.2) intro = ctx.nlgIntroSafe;
+        else if (riskScore < 0.4) intro = ctx.nlgIntroWarn;
+        else if (riskScore < 0.65) intro = ctx.nlgIntroDanger;
+        else intro = ctx.nlgIntroCrit;
 
         let text = intro + ' ';
         
-        if (topObs.length >= 1) {
-            const first = topObs[0].text;
-            text += first.charAt(0).toUpperCase() + first.slice(1) + '.';
+        // Usar fatos traduzidos já gerados pela análise contextual
+        const availableFacts = [];
+        if (analysis) {
+            availableFacts.push(...analysis.alerts);
+            availableFacts.push(...analysis.details);
+            availableFacts.push(...analysis.suggestions);
         }
         
-        if (topObs.length >= 2) {
-            text += this.pick(connectors) + topObs[1].text + '.';
+        // Remove emoji prefix for better flow in paragraph
+        const cleanFact = (str) => str.replace(/^[^\w\s]+\s*/, '').trim();
+
+        const factsToUse = availableFacts.slice(0, 3);
+        
+        if (factsToUse.length >= 1) {
+            const first = cleanFact(factsToUse[0]);
+            text += first.charAt(0).toUpperCase() + first.slice(1) + (first.endsWith('.') ? ' ' : '. ');
         }
         
-        if (topObs.length >= 3) {
-            text += ' ' + this.pick(['', 'Quanto ao resto, ', 'Para completar, ']) + topObs[2].text + '.';
+        if (factsToUse.length >= 2) {
+            const second = cleanFact(factsToUse[1]);
+            text += ctx.nlgAlso + ' ' + second.charAt(0).toUpperCase() + second.slice(1) + (second.endsWith('.') ? ' ' : '. ');
+        }
+        
+        if (factsToUse.length >= 3) {
+            const third = cleanFact(factsToUse[2]);
+            text += ctx.nlgFinally + ' ' + third.charAt(0).toUpperCase() + third.slice(1) + (third.endsWith('.') ? ' ' : '. ');
         }
 
         // Conclusão
-        if (riskScore < 0.2) {
-            text += this.pick([
-                ` Risco geral: ${percentage}%. Aproveite o dia!`,
-                ` Avaliação: ${percentage}% de risco. Boas condições para sair.`,
-                ` Nível de risco: ${percentage}%. Dia favorável.`
-            ]);
-        } else if (riskScore < 0.65) {
-            text += this.pick([
-                ` Risco geral: ${percentage}%. Fique atento e tome precauções.`,
-                ` Avaliação: ${percentage}% de risco. Monitore as condições.`,
-                ` Nível de risco: ${percentage}%. Cuidado redobrado.`
-            ]);
-        } else {
-            text += this.pick([
-                ` Risco geral: ${percentage}%. Procure abrigo imediatamente.`,
-                ` NÍVEL CRÍTICO: ${percentage}% de risco. Evite sair de casa.`,
-                ` Risco: ${percentage}%. Siga as orientações de segurança.`
-            ]);
-        }
+        if (riskScore < 0.2) text += ctx.nlgOutroSafe(percentage);
+        else if (riskScore < 0.65) text += ctx.nlgOutroWarn(percentage);
+        else text += ctx.nlgOutroCrit(percentage);
 
         return text;
     }

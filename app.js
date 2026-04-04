@@ -284,15 +284,15 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.riskIcon.className = `fa-solid ${prediction.icon}`;
         DOM.riskTitle.textContent = prediction.title;
 
-        // IA gera o texto original usando o motor NLG
-        const aiText = meteorGuardAI.generateText(aiInput, prediction.riskScore);
-        typewriterEffect(DOM.riskMessage, aiText, 18);
-
         // Render detailed analysis (from neural network)
         renderAIAnalysis(prediction.analysis);
 
+        // IA gera o texto original usando o motor NLG (passa as analises tb agora)
+        const aiText = meteorGuardAI.generateText(aiInput, prediction.riskScore, prediction.analysis);
+        typewriterEffect(DOM.riskMessage, aiText, 18);
+
         // Timestamp
-        DOM.aiTimestamp.textContent = `Última análise neural: ${prediction.timestamp}`;
+        DOM.aiTimestamp.textContent = `${i18n.t('aiLastAnalysis')}: ${prediction.timestamp}`;
     }
 
     function renderAIAnalysis(analysis) {
@@ -541,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             rainLayer = L.tileLayer(
                 `https://tilecache.rainviewer.com${latest.path}/256/{z}/{x}/{y}/4/1_1.png`,
-                { opacity: 0.6, zIndex: 10 }
+                { opacity: 0.6, zIndex: 10, maxNativeZoom: 7, maxZoom: 19 }
             ).addTo(currentMap);
         } catch (e) {
             console.warn('[METEORGUARD] Radar indisponível, usando fallback');
