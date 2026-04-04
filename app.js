@@ -79,7 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
         panels: document.querySelectorAll('.panel'),
         
         // Forecast list
-        forecastList: document.getElementById('dailyForecastList')
+        forecastList: document.getElementById('dailyForecastList'),
+
+        // MeteorChat (v5.2)
+        chatTrigger: document.getElementById('meteorChatTrigger'),
+        chatWindow: document.getElementById('meteorChatWindow'),
+        chatMessages: document.getElementById('chatMessages'),
+        chatInput: document.getElementById('chatInput'),
+        sendChat: document.getElementById('sendChat'),
+        closeChat: document.getElementById('closeChat')
     };
 
     // Current city state for favorites
@@ -113,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyLanguage();
         bootAI();
         getUserLocation();
+        setupChatListeners();
     }
 
     // -----------------------------------
@@ -1105,6 +1114,63 @@ document.addEventListener('DOMContentLoaded', () => {
         // AI Section Title with icon
         const aiTitle = document.querySelector('.risk-panel .panel-header h3');
         if (aiTitle) aiTitle.innerHTML = `<i class="fa-solid fa-sparkles neon-text-green pulse-glow"></i> ${i18n.t('aiTitle')}`;
+    }
+
+    // -----------------------------------
+    // MeteorChat: Interactive Logic (v5.2)
+    // -----------------------------------
+    function setupChatListeners() {
+        if (!DOM.chatTrigger) return;
+
+        DOM.chatTrigger.addEventListener('click', () => {
+            DOM.chatWindow.classList.toggle('hidden');
+            if (!DOM.chatWindow.classList.contains('hidden')) {
+                DOM.chatInput.focus();
+            }
+        });
+
+        DOM.closeChat.addEventListener('click', () => {
+            DOM.chatWindow.classList.add('hidden');
+        });
+
+        DOM.sendChat.addEventListener('click', () => sendMessage());
+        DOM.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    }
+
+    function sendMessage() {
+        const query = DOM.chatInput.value.trim();
+        if (!query) return;
+
+        // 1. User Message
+        appendChatMsg('user', query);
+        DOM.chatInput.value = '';
+
+        // 2. AI Thinking
+        const thinkingId = 'thinking-' + Date.now();
+        appendChatMsg('ai', 'Pensando...', thinkingId);
+
+        // 3. Mini-NLP Loop
+        setTimeout(() => {
+            const thinkingElement = document.getElementById(thinkingId);
+            if (thinkingElement) thinkingElement.remove();
+
+            const aiResponse = meteorGuardAI.askAI(query, lastWeatherData?.current || { 
+                temperature: 20, humidity: 50, windSpeed: 0, windGusts: 0, precipitation: 0, pressureMsl: 1013 
+            });
+
+            appendChatMsg('ai', aiResponse);
+        }, 1000);
+    }
+
+    function appendChatMsg(type, text, id = null) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${type}-message`;
+        if (id) msgDiv.id = id;
+        msgDiv.textContent = text;
+        DOM.chatMessages.appendChild(msgDiv);
+        DOM.chatMessages.scrollTop = DOM.chatMessages.scrollHeight;
     }
 });
 

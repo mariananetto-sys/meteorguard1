@@ -314,40 +314,68 @@ class MeteorGuardAI {
         const factors = this.getTopRiskFactors(data, risk);
         const displayConf = isNaN(conf) ? 0 : Math.round(conf * 100);
         
-        // 1. Introdução Baseada em Confiança
         let text = "";
-        if (displayConf < 40 && displayConf > 0) {
-            text = "Ainda estou calibrando meus sensores para este padrão, mas minha análise inicial indica que ";
-        } else if (displayConf === 0) {
-            text = "Estou processando os primeiros sinais da atmosfera. Por enquanto, observo que ";
+        
+        // 1. Introdução Natural
+        if (displayConf < 30) {
+            text = "Opa, ainda estou sentindo o clima por aqui, mas por enquanto ";
+        } else if (risk > 0.8) {
+            text = "Olha, a situação está séria por aqui: ";
+        } else if (risk < 0.35) {
+            text = "Tudo tranquilo no momento. ";
         } else {
-            text = "Após analisar os padrões climáticos atuais, verifico que ";
+            text = "Percebi uma mudança no padrão aqui: ";
         }
 
-        // 2. Corpo Baseado em Risco e Fatores
+        // 2. Corpo Literário e Direto
         if (sigs.critical.length > 0) {
-            text += `estamos sob **PERIGO EXTREMO**! Detectei ${sigs.critical.join(' e ')} em níveis críticos. É vital buscar abrigo e evitar áreas descampadas imediatamente.`;
+            text += `percebi ${sigs.critical.join(' e ')} em níveis perigosos. É melhor não facilitar e ficar em um lugar seguro até isso passar.`;
         } else if (risk > 0.7) {
-            text += `as condições são severas e instáveis. ${sigs.severe.length > 0 ? 'O foco de preocupação é ' + sigs.severe.join(', ') + '.' : ''} Recomendo evitar atividades ao ar livre prolongadas.`;
+            text += `o tempo está bem instável e o que mais me preocupa agora é ${sigs.severe.join(', ')}. Se puder, evite áreas abertas.`;
         } else if (risk < 0.35) {
-            text += "o tempo está estável e seguro. ";
             if (sigs.positive.length > 0) {
-                text += `Destaque para ${sigs.positive.join(' e ')}, o que favorece muito atividades externas.`;
+                text += `Destaque para ${sigs.positive.join(' e ')}. Está excelente para qualquer atividade externa!`;
             } else {
-                text += "As condições atuais são ideais para o dia a dia.";
+                text += "Pode seguir com seus planos, o clima está trabalhando a seu favor hoje.";
             }
         } else {
             // Risco Moderado
             const topF = factors.map(f => f.factor).join(' e ');
-            text += `existe um risco moderado no momento, impulsionado principalmente por alterações em **${topF || 'diversos fatores'}**. Fique atento a mudanças repentinas no horizonte.`;
-        }
-
-        // 3. Conclusão / Conselho
-        if (risk > 0.5) {
-            text += " Mantenha o MeteorGuard ativo para atualizações em tempo real.";
+            text += `o risco subiu um pouco principalmente por causa de **${topF || 'algumas variações sutis'}**. Nada crítico por enquanto, mas é bom ficar de olho no horizonte.`;
         }
 
         return text;
+    }
+
+    /**
+     * MeteorChat: Mini-NLP Engine (Interactive v5.2)
+     */
+    askAI(query, data) {
+        query = query.toLowerCase();
+        const risk = this.computePhysicsLabel([data.temperature, data.humidity, data.windSpeed, data.windGusts, data.precipitation, data.pressureMsl, 0, 20000, 0, 10]);
+        
+        if (query.includes("chuva") || query.includes("chuver") || query.includes("molhar")) {
+            if (data.precipitation > 5) return "Já está chovendo ou prestes a começar. Melhor levar o guarda-chuva ou esperar passar.";
+            if (data.precipitation > 0) return "Tem uma chuva leve na área. Nada preocupante, mas não esqueça a capa se for ficar muito tempo fora.";
+            return "Pelas minhas leituras atuais, não tem sinal de chuva nas próximas horas.";
+        }
+        
+        if (query.includes("sair") || query.includes("lazer") || query.includes("bom dia")) {
+            if (risk > 0.6) return "Eu diria que não é o melhor momento. O tempo está instável e pode piorar rápido.";
+            if (risk > 0.35) return "Dá pra sair sim, mas fica de olho. Tem algumas variações no clima que pedem atenção.";
+            return "Com certeza! O dia está excelente e seguro para qualquer atividade fora de casa.";
+        }
+
+        if (query.includes("perigoso") || query.includes("seguro") || query.includes("risco")) {
+            if (risk > 0.7) return `No momento há risco elevado. O perigo maior vem de ventos e instabilidade.`;
+            return "Fica tranquilo, o nível de risco está bem baixo nas condições atuais.";
+        }
+
+        if (query.includes("quem é você") || query.includes("voce") || query.includes("nome")) {
+            return "Eu sou o MeteorGuard AI, seu assistente pessoal de clima e segurança.";
+        }
+
+        return "Hum, não entendi muito bem. Tenta perguntar sobre chuva, se dá pra sair ou sobre os riscos agora.";
     }
 
     getRiskLevel(risk) { if (risk > 0.8) return 'critical'; if (risk > 0.6) return 'danger'; if (risk > 0.35) return 'warning'; return 'safe'; }

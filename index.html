@@ -354,6 +354,29 @@
     <script src="i18n.js"></script>
     <script src="services.js"></script>
     <script src="ai-model.js"></script>
-    <script src="app.js"></script>
+    <!-- MeteorChat: Mini-Intelligence Interface -->
+    <div id="meteorChatTrigger" class="chat-trigger fade-in delay-3">
+        <i class="fa-solid fa-comments"></i>
+        <span class="chat-tooltip">Pergunte à IA</span>
+    </div>
+
+    <div id="meteorChatWindow" class="chat-window hidden">
+        <div class="chat-header">
+            <div class="chat-title">
+                <i class="fa-solid fa-robot neon-text-blue"></i>
+                <span>MeteorChat IA</span>
+            </div>
+            <button id="closeChat"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="chatMessages" class="chat-messages">
+            <div class="message ai-message">
+                Olá! Como posso te ajudar com o clima hoje? Pode perguntar coisas como "Vai chuver?" ou "Dá pra sair hoje?".
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Digite sua pergunta..." autocomplete="off">
+            <button id="sendChat"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
 </body>
 </html>
