@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat API Tester - MeteorGuard</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { 
+            background: #0f172a; color: #e2e8f0; 
+            margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh;
+        }
+        .container {
+            width: 100%; max-width: 600px; height: 90vh; background: #1e293b;
+            border-radius: 12px; display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #334155;
+        }
+        .header {
+            background: #0f172a; padding: 15px; border-bottom: 1px solid #334155;
+        }
+        .header h3 { margin: 0 0 10px 0; color: #00f0ff; }
+        .config-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .config-row input {
+            flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #475569;
+            background: #0f172a; color: #fff; font-size: 0.8rem;
+        }
+        .chat-area {
+            flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;
+        }
+        .message {
+            max-width: 80%; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5;
+        }
+        .msg-user {
+            background: #3b82f6; align-self: flex-end; border-bottom-right-radius: 2px;
+        }
+        .msg-ai {
+            background: #334155; align-self: flex-start; border-bottom-left-radius: 2px;
+            border-left: 3px solid #00f0ff;
+        }
+        .msg-error {
+            background: #ff336622; color: #ffb3c6; border-left: 3px solid #ff3366;
+            align-self: flex-start; border-bottom-left-radius: 2px;
+        }
+        .controls {
+            background: #0f172a; padding: 15px; border-top: 1px solid #334155;
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+        }
+        .controls input {
+            padding: 10px; border-radius: 6px; border: 1px solid #475569;
+            background: #1e293b; color: #fff;
+        }
+        .send-btn {
+            grid-column: span 3; padding: 12px; border: none; border-radius: 6px;
+            background: #00f0ff; color: #0f172a; font-weight: bold; cursor: pointer;
+            transition: 0.2s;
+        }
+        .send-btn:hover { background: #00b8c4; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Configurações da API -->
+        <div class="header">
+            <h3>🌩️ MeteorGuard API Client</h3>
+            <div class="config-row">
+                <input type="text" id="apiUrl" value="/api/predict" placeholder="URL da API (Deixe /api/predict se rodar via Vercel Dev)">
+                <input type="password" id="apiKey" value="mg_key_teste_12345" placeholder="Sua API Key">
+            </div>
+        </div>
+
+        <!-- Tela do Chat -->
+        <div class="chat-area" id="chat">
+            <div class="message msg-ai">Olá! Eu sou a interface de testes da sua API. Modifique os valores meteorológicos lá embaixo e clique em <b>Analisar</b>. Vou enviar a requisição pra nuvem usando sua Senha e ler te dar a resposta!</div>
+        </div>
+
+        <!-- Inserir Dados e Enviar -->
+        <div class="controls">
+            <div>
+                <label style="font-size: 0.75rem; color: #94a3b8;">Temperatura (°C)</label>
+                <input type="number" id="valTemp" value="32" style="width:100%">
+            </div>
+            <div>
+                <label style="font-size: 0.75rem; color: #94a3b8;">Chuva (mm/h)</label>
+                <input type="number" id="valRain" value="45" style="width:100%">
+            </div>
+            <div>
+                <label style="font-size: 0.75rem; color: #94a3b8;">Vento (km/h)</label>
+                <input type="number" id="valWind" value="95" style="width:100%">
+            </div>
+            <button class="send-btn" id="sendBtn">📡 Enviar Predição para a API</button>
+        </div>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chat');
+        const sendBtn = document.getElementById('sendBtn');
+
+        function addMessage(text, type) {
+            const div = document.createElement('div');
+            div.className = `message msg-${type}`;
+            div.innerHTML = text;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        sendBtn.addEventListener('click', async () => {
+            const url = document.getElementById('apiUrl').value;
+            const key = document.getElementById('apiKey').value;
+            
+            const payload = {
+                temperature: Number(document.getElementById('valTemp').value),
+                precipitation: Number(document.getElementById('valRain').value),
+                windSpeed: Number(document.getElementById('valWind').value),
+                humidity: 80, // Fixo pro teste
+                pressureMsl: 990
+            };
+
+            // 1. Mensagem do Usuário
+            addMessage(`🌤️ Verificando: <b>${payload.temperature}°C</b>, Chuva: <b>${payload.precipitation}mm</b>, Vento: <b>${payload.windSpeed}km/h</b>`, 'user');
+            
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Enviando...';
+
+            try {
+                // 2. CHAMA A SUA API REAL NA VERCEL
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': key // A Mágica de Segurança Acontece Aqui!
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                // 3. Verifica a resposta
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erro Crítico na Chamada');
+                }
+
+                // 4. Se deu bom, injeta a Resposta em Formato de Chat
+                let aiText = `✅ <b>${data.auth}</b><br><br>`;
+                aiText += `Nível Extrapolado: <b style="text-transform:uppercase;">${data.prediction.riskLevel}</b> (Score: ${data.prediction.riskPercentage}%)<br>`;
+                aiText += `Índice de Tempestade Calculado pelo Backend: ${data.computedFeatures.stormIndex}<br><br>`;
+                aiText += `💬 <i>"${data.prediction.analysis}"</i>`;
+
+                addMessage(aiText, 'ai');
+
+            } catch (err) {
+                // Cai aqui se a API KEY estiver errada!
+                addMessage(`❌ ERRO DE API: ${err.message}`, 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '📡 Enviar Predição para a API';
+            }
+        });
+    </script>
+</body>
+</html>
