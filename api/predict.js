@@ -34,13 +34,14 @@ function validateInput(body) {
     if (!body || typeof body !== 'object') return { isValid: false, error: "Payload inválido ou vazio." };
     
     // Converte e higieniza contra ataques XSS ou Typecasting
+    // Adicionado coalescência nula (??) para prover valores default se o frontend omitir alguma key
     const safeData = {
-        temperature: Number(body.temperature),
-        humidity: Number(body.humidity),
-        windSpeed: Number(body.windSpeed),
-        precipitation: Number(body.precipitation),
-        pressureMsl: Number(body.pressureMsl),
-        pm25: Number(body.pm25)
+        temperature: Number(body.temperature ?? 25),
+        humidity: Number(body.humidity ?? 50),
+        windSpeed: Number(body.windSpeed ?? 0),
+        precipitation: Number(body.precipitation ?? 0),
+        pressureMsl: Number(body.pressureMsl ?? 1013),
+        pm25: Number(body.pm25 ?? 10)
     };
 
     // Validar se qualquer parâmetro falhou ao virar número (NaN)
