@@ -46,6 +46,10 @@ const i18n = {
 
             // Alerts
             alertsTitle: 'ALERTAS METEOROLÓGICOS ATIVOS',
+            govAlertTitle: 'ALERTA GOVERNAMENTAL EXTREMO',
+            govAlertMsg: 'Condições climáticas na sua região apresentam risco severo e imediato. Proteja-se e siga orientações da Defesa Civil.',
+            closeAlertWait: (s) => `FECHAR ALERTA (${s}s)`,
+            closeAlertReady: 'FECHAR ALERTA',
             alertWind: (v) => `Ventos fortes de ${v} km/h — objetos podem ser arremessados`,
             alertWindCrit: (v) => `Rajadas destrutivas de ${v} km/h — risco de destelhamento`,
             alertRain: (v) => `Chuva forte de ${v} mm/h — evite áreas de risco`,
@@ -150,6 +154,10 @@ const i18n = {
             riskCritical: 'EMERGENCY: Extreme Risk',
 
             alertsTitle: 'ACTIVE WEATHER ALERTS',
+            govAlertTitle: 'EXTREME GOVERNMENT ALERT',
+            govAlertMsg: 'Weather conditions in your area present severe and immediate risk. Take shelter and follow official guidance.',
+            closeAlertWait: (s) => `CLOSE ALERT (${s}s)`,
+            closeAlertReady: 'CLOSE ALERT',
             alertWind: (v) => `Strong winds at ${v} km/h — flying debris possible`,
             alertWindCrit: (v) => `Destructive gusts at ${v} km/h — structural damage risk`,
             alertRain: (v) => `Heavy rain at ${v} mm/h — avoid risk areas`,
@@ -247,6 +255,10 @@ const i18n = {
             riskCritical: 'EMERGENCIA: Riesgo Extremo',
 
             alertsTitle: 'ALERTAS METEOROLÓGICAS ACTIVAS',
+            govAlertTitle: 'ALERTA GUBERNAMENTAL EXTREMA',
+            govAlertMsg: 'Las condiciones climáticas en su área presentan un riesgo severo e inmediato. Protéjase y siga las instrucciones oficiales.',
+            closeAlertWait: (s) => `CERRAR ALERTA (${s}s)`,
+            closeAlertReady: 'CERRAR ALERTA',
             alertWind: (v) => `Vientos fuertes de ${v} km/h — objetos pueden salir volando`,
             alertWindCrit: (v) => `Ráfagas destructivas de ${v} km/h — riesgo de daños`,
             alertRain: (v) => `Lluvia fuerte de ${v} mm/h — evite zonas de riesgo`,

@@ -63,6 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
         favoritesList: document.getElementById('favoritesList'),
         favCityBtn: document.getElementById('favCityBtn'),
         
+        // Extreme Alert
+        extremeOverlay: document.getElementById('extremeAlertOverlay'),
+        extremeTitle: document.getElementById('extremeAlertTitle'),
+        extremeMsg: document.getElementById('extremeAlertMsg'),
+        extremeCloseBtn: document.getElementById('extremeAlertCloseBtn'),
+        extremeCloseText: document.getElementById('extremeAlertCloseText'),
+        
         // Panels for animation resets
         panels: document.querySelectorAll('.panel'),
         
@@ -767,6 +774,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         
         
+        // Trigger Extreme Government Alert Overlay if ANY critical condition exists
+        if (alerts.some(a => a.level === 'critical')) {
+            showExtremeAlert();
+        }
+        
         // Render
         if (alerts.length > 0) {
             DOM.weatherAlertsBar.classList.remove('hidden');
@@ -781,6 +793,45 @@ document.addEventListener('DOMContentLoaded', () => {
             DOM.weatherAlertsBar.classList.add('hidden');
             DOM.alertsList.innerHTML = '';
         }
+    }
+
+    // -----------------------------------
+    // Extreme Alert Logic
+    // -----------------------------------
+    let extremeAlertInterval = null;
+    function showExtremeAlert() {
+        if (!DOM.extremeOverlay) return;
+        
+        // Prevent showing multiple times in the same session for the same city
+        const cityKey = currentCityInfo.name + '_extreme_alert';
+        if (sessionStorage.getItem(cityKey)) return;
+        sessionStorage.setItem(cityKey, 'true');
+
+        DOM.extremeTitle.textContent = i18n.t('govAlertTitle');
+        DOM.extremeMsg.textContent = i18n.t('govAlertMsg');
+        DOM.extremeCloseBtn.disabled = true;
+        DOM.extremeOverlay.classList.remove('hidden');
+        
+        let timeLeft = 10;
+        DOM.extremeCloseText.textContent = i18n.t('closeAlertWait')(timeLeft);
+        
+        if (extremeAlertInterval) clearInterval(extremeAlertInterval);
+        extremeAlertInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(extremeAlertInterval);
+                DOM.extremeCloseBtn.disabled = false;
+                DOM.extremeCloseText.textContent = i18n.t('closeAlertReady');
+            } else {
+                DOM.extremeCloseText.textContent = i18n.t('closeAlertWait')(timeLeft);
+            }
+        }, 1000);
+        
+        DOM.extremeCloseBtn.onclick = () => {
+            if (!DOM.extremeCloseBtn.disabled) {
+                DOM.extremeOverlay.classList.add('hidden');
+            }
+        };
     }
 
     // -----------------------------------

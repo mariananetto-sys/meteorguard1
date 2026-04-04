@@ -100,8 +100,74 @@ body {
 .fade-in {
     animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     opacity: 0;
-    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
 }
+
+/* ==========================================
+   EXTREME ALERT OVERLAY
+   ========================================== */
+.extreme-alert-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 0, 0, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    animation: alertFlash 1.5s infinite alternate;
+}
+@keyframes alertFlash {
+    from { background: rgba(220, 0, 0, 0.9); }
+    to { background: rgba(255, 20, 20, 0.98); }
+}
+.extreme-alert-overlay.hidden {
+    display: none;
+    animation: none;
+}
+.extreme-alert-content i {
+    color: white;
+    margin-bottom: 10px;
+}
+.extreme-alert-content h1 {
+    font-size: 2.5rem;
+    margin: 15px 0;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+.extreme-alert-content p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    max-width: 600px;
+    margin-left: auto; margin-right: auto;
+}
+.extreme-alert-close {
+    background: rgba(0,0,0,0.4);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.5);
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.extreme-alert-close:hover:not(:disabled) {
+    background: white;
+    color: red;
+    border-color: white;
+}
+.extreme-alert-close:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    border-color: rgba(255,255,255,0.2);
+}
+
 .delay-1 { animation-delay: 0.1s; }
 .delay-2 { animation-delay: 0.2s; }
 .delay-3 { animation-delay: 0.3s; }
@@ -790,6 +856,8 @@ section {
     .hourly-section {
         padding: 0 10px;
     }
+    .extreme-alert-content h1 { font-size: 1.8rem; }
+    .extreme-alert-content p { font-size: 1rem; }
 }
 
 /* Extra small (iPhone SE etc) */
