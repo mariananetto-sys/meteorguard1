@@ -60,22 +60,30 @@ export default function handler(req, res) {
     riskScore = Math.min(1.0, Math.max(0.0, Math.pow(riskScore, 1.2)));
     const percentage = Math.round(riskScore * 100);
 
-    // Geração de Linguagem Natural Básica
-    let interpretationText = `Análise MeteorGuard Concluída. Risco calculado em ${percentage}%. `;
+    // Geração de Linguagem Natural (NLG) Clássica
+    let interpretationText = "";
+    let riskTitle = "";
     let riskLevel = "safe";
 
     if (percentage > 85) {
         riskLevel = "critical";
-        interpretationText += "ALERTA MÁXIMO: Níveis críticos de instabilidade ou tempestade identificados. Evite áreas de risco.";
+        riskTitle = `🔴 NÍVEL CRÍTICO — Risco ${percentage}%`;
+        interpretationText = `ALERTA MÁXIMO: Níveis críticos e agressivos de instabilidade identificados. (PM2.5: ${pm25} µg/m³). Risco altíssimo para locomoção e vida. Evite áreas de risco e busque abrigo.`;
     } else if (percentage > 50) {
         riskLevel = "danger";
-        interpretationText += "PERIGO: Condições climáticas prejudiciais detectadas através da engenharia de dados. Tome cuidado.";
+        riskTitle = `🟠 PERIGO — Risco ${percentage}%`;
+        interpretationText = `Condições climáticas severas e prejudiciais detectadas pela engenharia de dados. Nível de poluentes (PM2.5: ${pm25} µg/m³). Fique em segurança e acompanhe o radar.`;
     } else if (percentage > 25) {
         riskLevel = "warning";
-        interpretationText += "ATENÇÃO: Existem leves indícios de instabilidade (vento/chuva ou calor). Fique alerta.";
+        riskTitle = `🟡 ATENÇÃO LEVE — Risco ${percentage}%`;
+        interpretationText = `Existem leves indícios de instabilidade (vento, chuva ou níveis térmicos). Ar registrado em (PM2.5: ${pm25} µg/m³). Tenha precaução em atividades ao ar livre.`;
     } else {
-        interpretationText += "Condições estruturais do clima estão excelentes e estáveis para o ecossistema e saúde humana.";
+        riskLevel = "safe";
+        riskTitle = `🟢 SEGURO — Risco ${percentage}%`;
+        interpretationText = `Condições climáticas favoráveis no momento. Ar limpo e saudável (PM2.5: ${pm25} µg/m³). Além disso, condições perfeitamente estáveis. Risco geral: ${percentage}%. Aproveite o dia!`;
     }
+    
+    const finalNlgString = `${riskTitle}\n${interpretationText}`;
 
     // 5. Devolver os dados pela porta da API em JSON padrão RESTful
     return res.status(200).json({
@@ -89,7 +97,7 @@ export default function handler(req, res) {
             riskLevel: riskLevel,
             riskScore: riskScore,
             riskPercentage: percentage,
-            analysis: interpretationText
+            analysis: finalNlgString
         }
     });
 }

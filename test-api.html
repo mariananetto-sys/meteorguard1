@@ -142,7 +142,7 @@
                 }
 
                 // 4. Se deu bom, injeta a Resposta Limpa e Pura em Formato de Chat
-                let aiText = `${data.prediction.analysis}`;
+                let aiText = `${data.prediction.analysis}`.replace(/\n/g, '<br><br>');
 
                 addMessage(aiText, 'ai');
 
