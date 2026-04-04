@@ -41,9 +41,44 @@
                 <div id="searchResults" class="search-results glass-panel hidden"></div>
             </div>
 
-            <button id="locationBtn" class="glow-btn icon-btn" title="Usar minha localização">
-                <i class="fa-solid fa-location-crosshairs"></i>
-            </button>
+            <div class="header-actions">
+                <!-- Favorites Button -->
+                <div class="favorites-wrapper">
+                    <button id="favoritesBtn" class="glow-btn icon-btn" title="Cidades salvas">
+                        <i class="fa-solid fa-bookmark"></i>
+                    </button>
+                    <div id="favoritesDropdown" class="favorites-dropdown neon-glass hidden">
+                        <div class="favorites-header">
+                            <h4><i class="fa-solid fa-star neon-text-purple"></i> Cidades Salvas</h4>
+                        </div>
+                        <div id="favoritesList" class="favorites-list">
+                            <p class="text-muted" style="padding:12px; text-align:center; font-size:0.85rem;">Nenhuma cidade salva ainda</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Language Selector -->
+                <div class="lang-wrapper">
+                    <button id="langBtn" class="glow-btn icon-btn" title="Idioma">
+                        <i class="fa-solid fa-globe"></i>
+                    </button>
+                    <div id="langDropdown" class="lang-dropdown neon-glass hidden">
+                        <div class="lang-option" data-lang="pt">
+                            <span>🇧🇷</span> Português
+                        </div>
+                        <div class="lang-option" data-lang="en">
+                            <span>🇺🇸</span> English
+                        </div>
+                        <div class="lang-option" data-lang="es">
+                            <span>🇪🇸</span> Español
+                        </div>
+                    </div>
+                </div>
+
+                <button id="locationBtn" class="glow-btn icon-btn" title="Usar minha localização">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                </button>
+            </div>
         </header>
 
         <!-- Main Dashboard Content -->
@@ -54,12 +89,26 @@
                 <p>Sincronizando satélites...</p>
             </div>
 
+            <!-- Weather Alerts Bar (hidden by default) -->
+            <section id="weatherAlertsBar" class="weather-alerts-bar hidden">
+                <div class="alerts-bar-header">
+                    <i class="fa-solid fa-triangle-exclamation pulse-glow"></i>
+                    <span>ALERTAS METEOROLÓGICOS ATIVOS</span>
+                </div>
+                <div id="alertsList" class="alerts-list"></div>
+            </section>
+
             <!-- Top Section: Current Weather & AI Risk -->
             <section class="top-section">
                 <!-- Current Weather Hero -->
                 <div class="panel hero-panel neon-glass fade-in">
                     <div class="location-header">
-                        <h2 id="cityName">Carregando...</h2>
+                        <div class="location-title">
+                            <h2 id="cityName">Carregando...</h2>
+                            <button id="favCityBtn" class="fav-city-btn" title="Salvar cidade">
+                                <i class="fa-regular fa-star"></i>
+                            </button>
+                        </div>
                         <p id="countryName">Localizando coordenadas</p>
                     </div>
                     
@@ -138,7 +187,7 @@
                     <div id="aiTrainingBox" class="ai-training-box glass-badge">
                         <div class="ai-training-header">
                             <i class="fa-solid fa-microchip neon-text-green blink-anim"></i>
-                            <span>Rede Neural: Treinando 300 cenários climáticos...</span>
+                            <span>Rede Neural: Treinando 350 cenários climáticos...</span>
                         </div>
                         <div class="ai-progress-bar">
                             <div id="aiProgressFill" class="ai-progress-fill"></div>
@@ -177,18 +226,31 @@
                 </div>
             </section>
 
+            <!-- Hourly Forecast (24h Timeline) -->
+            <section class="hourly-section">
+                <div class="panel neon-glass fade-in delay-1point5">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-clock neon-text-blue"></i> Previsão 24 Horas</h3>
+                        <span class="badge" style="font-size:0.7rem;">HORA A HORA</span>
+                    </div>
+                    <div class="hourly-scroll" id="hourlyScroll">
+                        <!-- JS injected -->
+                    </div>
+                </div>
+            </section>
+
             <!-- Middle Section: Map and Charts -->
             <section class="middle-section">
-                <!-- Interactive Map -->
+                <!-- Interactive Map with Real Radar -->
                 <div class="panel map-panel neon-glass fade-in delay-2">
                     <div class="panel-header">
-                        <h3><i class="fa-solid fa-satellite-dish neon-text-blue blink-anim"></i> Radar Global Open-Meteo</h3>
+                        <h3><i class="fa-solid fa-satellite-dish neon-text-blue blink-anim"></i> Radar de Precipitação</h3>
                         <span class="badge live-badge">AO VIVO</span>
                     </div>
                     <div id="map" class="map-container"></div>
                 </div>
 
-                <!-- Extended Forecast 7 days -->
+                <!-- Temperature Chart -->
                 <div class="panel chart-panel neon-glass fade-in delay-3">
                     <div class="panel-header">
                         <h3><i class="fa-solid fa-chart-area neon-text-purple"></i> Tendência 7 Dias</h3>
@@ -196,7 +258,16 @@
                     <div class="chart-container">
                         <canvas id="forecastChart"></canvas>
                     </div>
-                    
+                </div>
+            </section>
+
+            <!-- Daily Forecast Cards (SEPARATE SECTION - Clickable) -->
+            <section class="daily-cards-section">
+                <div class="panel neon-glass fade-in delay-3">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-calendar-days neon-text-green"></i> Previsão Semanal</h3>
+                        <span class="badge" style="font-size:0.7rem;">CLIQUE PARA DETALHES</span>
+                    </div>
                     <div class="daily-forecast-list" id="dailyForecastList">
                         <!-- JS injected -->
                     </div>
@@ -205,11 +276,47 @@
         </main>
     </div>
 
+    <!-- Day Detail Modal -->
+    <div id="dayModal" class="day-modal-overlay hidden">
+        <div class="day-modal neon-glass">
+            <button id="dayModalClose" class="day-modal-close"><i class="fa-solid fa-xmark"></i></button>
+            <div class="day-modal-header">
+                <i id="dayModalIcon" class="fa-solid fa-cloud-sun fa-2x"></i>
+                <div>
+                    <h3 id="dayModalTitle">Sábado, 05 Abril</h3>
+                    <p id="dayModalDesc" class="text-muted">Parcialmente Nublado</p>
+                </div>
+            </div>
+            <div class="day-modal-temps">
+                <div class="day-modal-temp-box">
+                    <span class="temp-label">Máxima</span>
+                    <span id="dayModalMax" class="temp-value neon-text-red">34°</span>
+                </div>
+                <div class="day-modal-temp-box">
+                    <span class="temp-label">Mínima</span>
+                    <span id="dayModalMin" class="temp-value neon-text-blue">24°</span>
+                </div>
+                <div class="day-modal-temp-box">
+                    <span class="temp-label">Chuva</span>
+                    <span id="dayModalRain" class="temp-value neon-text-purple">73%</span>
+                </div>
+                <div class="day-modal-temp-box">
+                    <span class="temp-label">UV Máx</span>
+                    <span id="dayModalUV" class="temp-value neon-text-green">8.5</span>
+                </div>
+            </div>
+            <div id="dayModalAnalysis" class="day-modal-analysis">
+                <!-- IA analysis injected here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
     
+    <script src="i18n.js"></script>
     <script src="services.js"></script>
     <script src="ai-model.js"></script>
     <script src="app.js"></script>

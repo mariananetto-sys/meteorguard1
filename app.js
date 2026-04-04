@@ -50,11 +50,42 @@ document.addEventListener('DOMContentLoaded', () => {
         currentRain: document.getElementById('currentRain'),
         dailyRain: document.getElementById('dailyRain'),
         
+        // Hourly
+        hourlyScroll: document.getElementById('hourlyScroll'),
+        
+        // Alerts Bar
+        weatherAlertsBar: document.getElementById('weatherAlertsBar'),
+        alertsList: document.getElementById('alertsList'),
+        
+        // Favorites
+        favoritesBtn: document.getElementById('favoritesBtn'),
+        favoritesDropdown: document.getElementById('favoritesDropdown'),
+        favoritesList: document.getElementById('favoritesList'),
+        favCityBtn: document.getElementById('favCityBtn'),
+        
         // Panels for animation resets
         panels: document.querySelectorAll('.panel'),
         
         // Forecast list
         forecastList: document.getElementById('dailyForecastList')
+    };
+
+    // Current city state for favorites
+    let currentCityInfo = { lat: 0, lon: 0, name: '', country: '' };
+    let lastDailyData = null; // Store for modal re-use
+
+    // Modal DOM
+    const modalDOM = {
+        overlay: document.getElementById('dayModal'),
+        close: document.getElementById('dayModalClose'),
+        icon: document.getElementById('dayModalIcon'),
+        title: document.getElementById('dayModalTitle'),
+        desc: document.getElementById('dayModalDesc'),
+        max: document.getElementById('dayModalMax'),
+        min: document.getElementById('dayModalMin'),
+        rain: document.getElementById('dayModalRain'),
+        uv: document.getElementById('dayModalUV'),
+        analysis: document.getElementById('dayModalAnalysis')
     };
 
     // -----------------------------------
@@ -64,8 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function init() {
         setupEventListeners();
-        
-        // Boot AI Neural Network in parallel with location detection
+        setupModalListeners();
+        setupLanguageSelector();
+        applyLanguage();
         bootAI();
         getUserLocation();
     }
@@ -124,11 +156,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 500);
         });
         
-        // Close search when click outside
+        // Close search/favorites/lang when click outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.search-container')) {
                 DOM.searchResults.classList.add('hidden');
             }
+            if (!e.target.closest('.favorites-wrapper')) {
+                DOM.favoritesDropdown.classList.add('hidden');
+            }
+            if (!e.target.closest('.lang-wrapper')) {
+                document.getElementById('langDropdown')?.classList.add('hidden');
+            }
+        });
+
+        // Favorites dropdown toggle
+        DOM.favoritesBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            DOM.favoritesDropdown.classList.toggle('hidden');
+            renderFavoritesList();
+        });
+
+        // Favorite city star button
+        DOM.favCityBtn.addEventListener('click', () => {
+            toggleFavorite();
         });
     }
 
@@ -166,6 +216,9 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.searchResults.classList.add('hidden');
         DOM.searchInput.value = '';
         
+        // Save city info for favorites
+        currentCityInfo = { lat, lon, name, country };
+        
         try {
             resetAnimations();
             const weatherData = await WeatherService.getWeather(lat, lon);
@@ -176,13 +229,16 @@ document.addEventListener('DOMContentLoaded', () => {
             updateUI(weatherData, name, country);
             updateMap(lat, lon, weatherData.current.precipitation);
             updateChart(weatherData.daily);
+            renderHourlyForecast(weatherData.hourly);
+            checkWeatherAlerts(weatherData.current);
+            updateFavStar();
             
             // Run AI analysis
             runAIAnalysis(weatherData);
             
         } catch (error) {
             console.error("Failed to load city data:", error);
-            alert("Erro ao conectar com satélites ambientais. Tente novamente.");
+            alert(i18n.t('apiError'));
         } finally {
             showLoading(false);
         }
@@ -212,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Get neural network risk prediction
-        const prediction = meteorGuardAI.predict(aiInput);
+        const prediction = await meteorGuardAI.predict(aiInput);
 
         // Update Risk Indicator
         DOM.riskIndicator.className = `risk-indicator ${prediction.level} transition-all`;
@@ -290,6 +346,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderForecastList(dailyData) {
         DOM.forecastList.innerHTML = '';
+        lastDailyData = dailyData;
+        const daysLong = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
         const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         
         for (let i = 1; i < dailyData.length; i++) {
@@ -300,21 +358,115 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const interp = WeatherService.getWeatherInterpretation(dayData.weatherCode);
 
-            const html = `
-                <div class="forecast-item">
-                    <span class="forecast-day">${dayName}</span>
-                    <i class="fa-solid ${interp.icon} fa-lg ${dayData.rainProb > 50 ? 'neon-text-blue' : 'text-main'}"></i>
-                    <div class="forecast-temps">
-                        <span class="temp-max">${Math.round(dayData.maxTemp)}°</span>
-                        <span class="temp-min">${Math.round(dayData.minTemp)}°</span>
-                    </div>
-                    <span class="badge ${dayData.rainProb > 50 ? 'neon-text-blue' : 'text-muted'}" style="font-size: 0.7rem; margin-top: 5px;">
-                        ${dayData.rainProb}% <i class="fa-solid fa-droplet"></i>
-                    </span>
+            const div = document.createElement('div');
+            div.className = 'forecast-item';
+            div.dataset.index = i;
+            div.innerHTML = `
+                <span class="forecast-day">${dayName}</span>
+                <i class="fa-solid ${interp.icon} fa-lg ${dayData.rainProb > 50 ? 'neon-text-blue' : 'text-main'}"></i>
+                <div class="forecast-temps">
+                    <span class="temp-max">${Math.round(dayData.maxTemp)}°</span>
+                    <span class="temp-min">${Math.round(dayData.minTemp)}°</span>
                 </div>
+                <span class="badge ${dayData.rainProb > 50 ? 'neon-text-blue' : 'text-muted'}" style="font-size: 0.7rem; margin-top: 5px;">
+                    ${dayData.rainProb}% <i class="fa-solid fa-droplet"></i>
+                </span>
             `;
-            DOM.forecastList.insertAdjacentHTML('beforeend', html);
+            
+            // Click to open modal
+            div.addEventListener('click', () => openDayModal(dayData, realDate));
+            
+            DOM.forecastList.appendChild(div);
         }
+    }
+
+    // -----------------------------------
+    // Day Detail Modal
+    // -----------------------------------
+    function setupModalListeners() {
+        modalDOM.close.addEventListener('click', closeDayModal);
+        modalDOM.overlay.addEventListener('click', (e) => {
+            if (e.target === modalDOM.overlay) closeDayModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeDayModal();
+        });
+    }
+
+    function closeDayModal() {
+        modalDOM.overlay.classList.add('hidden');
+    }
+
+    function openDayModal(dayData, date) {
+        const daysLong = i18n.t('daysLong');
+        const months = i18n.t('months');
+        
+        const interp = WeatherService.getWeatherInterpretation(dayData.weatherCode);
+        
+        // Populate modal
+        modalDOM.icon.className = `fa-solid ${interp.icon} fa-2x`;
+        modalDOM.title.textContent = `${daysLong[date.getDay()]}, ${date.getDate()} de ${months[date.getMonth()]}`;
+        modalDOM.desc.textContent = interp.desc;
+        modalDOM.max.textContent = `${Math.round(dayData.maxTemp)}°`;
+        modalDOM.min.textContent = `${Math.round(dayData.minTemp)}°`;
+        modalDOM.rain.textContent = `${dayData.rainProb}%`;
+        modalDOM.uv.textContent = dayData.uvMax?.toFixed(1) || '--';
+        
+        // Generate AI analysis for this day
+        const analysis = generateDayAnalysis(dayData);
+        modalDOM.analysis.innerHTML = analysis;
+        
+        modalDOM.overlay.classList.remove('hidden');
+    }
+
+    function generateDayAnalysis(day) {
+        const rainProb = day.rainProb;
+        const maxTemp = day.maxTemp;
+        const minTemp = day.minTemp;
+        const rainSum = day.rainSum;
+        const uvMax = day.uvMax || 0;
+        const interp = WeatherService.getWeatherInterpretation(day.weatherCode);
+        
+        let verdict, verdictClass, verdictIcon;
+        let tips = [];
+        
+        // Determine if good to go out
+        if (rainProb > 70 || rainSum > 15 || interp.dangerContext >= 3) {
+            verdict = i18n.t('verdictNo');
+            verdictClass = 'no';
+            verdictIcon = 'fa-house';
+        } else if (rainProb > 40 || rainSum > 5 || maxTemp > 38 || interp.dangerContext >= 2) {
+            verdict = i18n.t('verdictCaution');
+            verdictClass = 'caution';
+            verdictIcon = 'fa-umbrella';
+        } else {
+            verdict = i18n.t('verdictYes');
+            verdictClass = 'yes';
+            verdictIcon = 'fa-thumbs-up';
+        }
+        
+        // Generate tips
+        if (rainProb > 50) tips.push(i18n.t('tipRain')(rainProb));
+        if (rainSum > 10) tips.push(i18n.t('tipRainSum')(rainSum.toFixed(1)));
+        if (maxTemp > 35) tips.push(i18n.t('tipHeat')(Math.round(maxTemp)));
+        if (minTemp < 10) tips.push(i18n.t('tipCold')(Math.round(minTemp)));
+        if (uvMax >= 8) tips.push(i18n.t('tipUV')(uvMax.toFixed(1)));
+        if (uvMax >= 11) tips.push(i18n.t('tipUVExtreme'));
+        if (interp.dangerContext >= 3) tips.push(i18n.t('tipStorm')(interp.desc));
+        if (tips.length === 0) tips.push(i18n.t('tipAllClear'));
+        
+        return `
+            <div class="analysis-title">
+                <i class="fa-solid fa-brain"></i> ${i18n.t('modalAITitle')}
+            </div>
+            <div class="analysis-text">
+                ${tips.map(t => `<p style="margin-bottom:6px;">${t}</p>`).join('')}
+            </div>
+            <div class="good-to-go ${verdictClass}">
+                <i class="fa-solid ${verdictIcon}"></i>
+                ${verdict}
+            </div>
+        `;
     }
 
     function renderSearchResults(results) {
@@ -346,52 +498,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -----------------------------------
-    // Map Engine (Leaflet / Simulated Radar)
+    // Map Engine (Leaflet + RainViewer Radar)
     // -----------------------------------
+    let rainLayer = null;
+    
     function updateMap(lat, lon, currentPrecipitation) {
         if (currentMap) {
-            currentMap.setView([lat, lon], 10);
-            drawRadarSim(lat, lon, currentPrecipitation);
+            currentMap.setView([lat, lon], 7);
+            loadRainRadar();
             return;
         }
 
         currentMap = L.map('map', {
             zoomControl: false,
             attributionControl: false
-        }).setView([lat, lon], 10);
+        }).setView([lat, lon], 7);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19
         }).addTo(currentMap);
         
         L.control.zoom({ position: 'bottomright' }).addTo(currentMap);
-        drawRadarSim(lat, lon, currentPrecipitation);
+        loadRainRadar();
     }
 
-    let radarCircle = null;
-    function drawRadarSim(lat, lon, rainMm) {
-        if (radarCircle) currentMap.removeLayer(radarCircle);
-
-        let color = '#00ff88';
-        let radius = 10000;
-
-        if (rainMm > 0 && rainMm <= 2) {
-            color = '#00f0ff';
-            radius = 15000;
-        } else if (rainMm > 2 && rainMm <= 10) {
-            color = '#b026ff';
-            radius = 25000;
-        } else if (rainMm > 10) {
-            color = '#ff3366';
-            radius = 40000;
+    async function loadRainRadar() {
+        try {
+            const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+            const data = await res.json();
+            const latest = data.radar.past[data.radar.past.length - 1];
+            
+            if (rainLayer) currentMap.removeLayer(rainLayer);
+            
+            rainLayer = L.tileLayer(
+                `https://tilecache.rainviewer.com${latest.path}/256/{z}/{x}/{y}/4/1_1.png`,
+                { opacity: 0.6, zIndex: 10 }
+            ).addTo(currentMap);
+        } catch (e) {
+            console.warn('[METEORGUARD] Radar indisponível, usando fallback');
         }
-
-        radarCircle = L.circle([lat, lon], {
-            color: color,
-            fillColor: color,
-            fillOpacity: 0.2,
-            radius: radius
-        }).addTo(currentMap);
     }
 
     // -----------------------------------
@@ -535,32 +680,272 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -----------------------------------
-    // AI Message Generator
+    // Hourly Forecast (24h Timeline)
     // -----------------------------------
-    function generateAIMessage(prediction, data) {
-        const messages = {
-            safe: [
-                `Analisei ${Math.round(data.humidity)}% de umidade, ventos de ${data.windSpeed?.toFixed(1)} km/h e pressão de ${data.pressureMsl?.toFixed(0)} hPa. Tudo dentro dos padrões seguros. Probabilidade de risco: ${prediction.percentage}%.`,
-                `Varredura concluída. Atmosfera estável com visibilidade de ${(data.visibility / 1000).toFixed(1)} km. Nenhuma anomalia detectada pelo radar neural. Risco: ${prediction.percentage}%.`,
-                `Processamento finalizado. Condições atmosféricas dentro da normalidade. Índice UV em ${data.uvIndex?.toFixed(1)} e qualidade do ar em PM2.5 ${data.pm25?.toFixed(0)} µg/m³. Probabilidade de risco: ${prediction.percentage}%.`
-            ],
-            'low-warning': [
-                `Detectei sinais de instabilidade leve. Umidade em ${Math.round(data.humidity)}% com precipitação de ${data.precipitation?.toFixed(1)} mm/h. Recomendo levar guarda-chuva por precaução. Risco calculado: ${prediction.percentage}%.`,
-                `Meus sensores indicam possibilidade de garoa. Pressão em ${data.pressureMsl?.toFixed(0)} hPa com tendência de queda. Fique atento às próximas horas. Risco: ${prediction.percentage}%.`
-            ],
-            warning: [
-                `Atenção. Identifiquei condições adversas: ventos de ${data.windSpeed?.toFixed(1)} km/h com rajadas de até ${data.windGusts?.toFixed(1)} km/h e precipitação de ${data.precipitation?.toFixed(1)} mm/h. Evite áreas de risco. Probabilidade: ${prediction.percentage}%.`,
-                `Alerta processado. A pressão caiu para ${data.pressureMsl?.toFixed(0)} hPa e a cobertura de nuvens está em ${data.cloudCover}%. Chuva moderada a forte esperada. Risco: ${prediction.percentage}%.`
-            ],
-            danger: [
-                `ALERTA CRÍTICO. Minha rede neural detectou condições severas: ventos de ${data.windSpeed?.toFixed(1)} km/h, precipitação intensa de ${data.precipitation?.toFixed(1)} mm/h e pressão em ${data.pressureMsl?.toFixed(0)} hPa. Permaneça em local seguro. Risco: ${prediction.percentage}%.`,
-            ],
-            critical: [
-                `EMERGÊNCIA. Todos os 11 indicadores ambientais apontam para risco extremo. Ventos destrutivos de ${data.windSpeed?.toFixed(1)} km/h, chuva torrencial e visibilidade quase zero (${(data.visibility / 1000).toFixed(1)} km). NÃO SAIA DE CASA. Risco calculado: ${prediction.percentage}%.`,
+    function renderHourlyForecast(hourlyData) {
+        if (!DOM.hourlyScroll || !hourlyData || hourlyData.length === 0) return;
+        
+        DOM.hourlyScroll.innerHTML = '';
+        const nowHour = new Date().getHours();
+        
+        hourlyData.forEach((hour, index) => {
+            const date = new Date(hour.time);
+            const hourNum = date.getHours();
+            const timeStr = hourNum === nowHour && index === 0 ? i18n.t('now') : `${String(hourNum).padStart(2, '0')}:00`;
+            const isNow = (hourNum === nowHour && index === 0);
+            
+            const interp = WeatherService.getWeatherInterpretation(hour.weatherCode);
+            const rainClass = hour.rainProb > 50 ? 'rain-high' : '';
+            
+            const card = document.createElement('div');
+            card.className = `hourly-card${isNow ? ' now' : ''}`;
+            card.innerHTML = `
+                <span class="hourly-time">${timeStr}</span>
+                <i class="fa-solid ${interp.icon} hourly-icon"></i>
+                <span class="hourly-temp">${Math.round(hour.temp)}°</span>
+                <span class="hourly-rain ${rainClass}">
+                    <i class="fa-solid fa-droplet"></i> ${hour.rainProb}%
+                </span>
+            `;
+            DOM.hourlyScroll.appendChild(card);
+        });
+    }
+
+    // -----------------------------------
+    // Weather Alerts System
+    // -----------------------------------
+    function checkWeatherAlerts(current) {
+        const alerts = [];
+        const t = key => i18n.t(key);
+        
+        // Wind alerts
+        if (current.windGusts > 90) {
+            alerts.push({ level: 'critical', icon: 'fa-wind', text: t('alertWindCrit')(current.windGusts?.toFixed(0)) });
+        } else if (current.windSpeed > 50) {
+            alerts.push({ level: 'warning', icon: 'fa-wind', text: t('alertWind')(current.windSpeed?.toFixed(0)) });
+        }
+        
+        // Rain alerts
+        if (current.precipitation > 30) {
+            alerts.push({ level: 'critical', icon: 'fa-cloud-showers-water', text: t('alertRainCrit')(current.precipitation?.toFixed(1)) });
+        } else if (current.precipitation > 10) {
+            alerts.push({ level: 'warning', icon: 'fa-cloud-showers-heavy', text: t('alertRain')(current.precipitation?.toFixed(1)) });
+        }
+        
+        // UV alerts
+        if (current.uvIndex >= 11) {
+            alerts.push({ level: 'critical', icon: 'fa-sun', text: t('alertUVCrit')(current.uvIndex?.toFixed(1)) });
+        } else if (current.uvIndex >= 8) {
+            alerts.push({ level: 'warning', icon: 'fa-sun', text: t('alertUV')(current.uvIndex?.toFixed(1)) });
+        }
+        
+        // Visibility alerts
+        if (current.visibility < 500) {
+            alerts.push({ level: 'critical', icon: 'fa-smog', text: t('alertVisCrit')((current.visibility / 1000).toFixed(1)) });
+        } else if (current.visibility < 2000) {
+            alerts.push({ level: 'warning', icon: 'fa-smog', text: t('alertVis')((current.visibility / 1000).toFixed(1)) });
+        }
+        
+        // Air quality alerts
+        if (current.pm25 > 150) {
+            alerts.push({ level: 'critical', icon: 'fa-lungs', text: t('alertAirCrit')(current.pm25?.toFixed(0)) });
+        } else if (current.pm25 > 55) {
+            alerts.push({ level: 'warning', icon: 'fa-lungs', text: t('alertAir')(current.pm25?.toFixed(0)) });
+        }
+
+        // Temperature extremes
+        if (current.temp > 40) {
+            alerts.push({ level: 'critical', icon: 'fa-temperature-arrow-up', text: t('alertHeat')(current.temp?.toFixed(1)) });
+        } else if (current.temp < 0) {
+            alerts.push({ level: 'warning', icon: 'fa-temperature-arrow-down', text: t('alertCold')(current.temp?.toFixed(1)) });
+        }
+        
+        // Pressure
+        if (current.pressureMsl < 990) {
+            alerts.push({ level: 'warning', icon: 'fa-gauge-simple-low', text: t('alertPressure')(current.pressureMsl?.toFixed(0)) });
+        }
+        
+        
+        
+        // Render
+        if (alerts.length > 0) {
+            DOM.weatherAlertsBar.classList.remove('hidden');
+            DOM.weatherAlertsBar.querySelector('.alerts-bar-header span').textContent = i18n.t('alertsTitle');
+            DOM.alertsList.innerHTML = alerts.map(a => `
+                <div class="alert-item ${a.level}">
+                    <i class="fa-solid ${a.icon}"></i>
+                    <span>${a.text}</span>
+                </div>
+            `).join('');
+        } else {
+            DOM.weatherAlertsBar.classList.add('hidden');
+            DOM.alertsList.innerHTML = '';
+        }
+    }
+
+    // -----------------------------------
+    // Favorites System (localStorage)
+    // -----------------------------------
+    function getFavorites() {
+        try {
+            return JSON.parse(localStorage.getItem('meteorguard_favorites') || '[]');
+        } catch { return []; }
+    }
+
+    function saveFavorites(favs) {
+        localStorage.setItem('meteorguard_favorites', JSON.stringify(favs));
+    }
+
+    function isFavorite(name) {
+        return getFavorites().some(f => f.name === name);
+    }
+
+    function toggleFavorite() {
+        const favs = getFavorites();
+        const idx = favs.findIndex(f => f.name === currentCityInfo.name);
+        
+        if (idx >= 0) {
+            favs.splice(idx, 1);
+        } else {
+            favs.push({ ...currentCityInfo });
+        }
+        
+        saveFavorites(favs);
+        updateFavStar();
+        renderFavoritesList();
+    }
+
+    function updateFavStar() {
+        if (isFavorite(currentCityInfo.name)) {
+            DOM.favCityBtn.classList.add('active');
+            DOM.favCityBtn.querySelector('i').className = 'fa-solid fa-star';
+        } else {
+            DOM.favCityBtn.classList.remove('active');
+            DOM.favCityBtn.querySelector('i').className = 'fa-regular fa-star';
+        }
+    }
+
+    function renderFavoritesList() {
+        const favs = getFavorites();
+        
+        if (favs.length === 0) {
+            DOM.favoritesList.innerHTML = '<p class="text-muted" style="padding:12px; text-align:center; font-size:0.85rem;">Nenhuma cidade salva ainda</p>';
+            return;
+        }
+        
+        DOM.favoritesList.innerHTML = favs.map(fav => `
+            <div class="fav-item" data-lat="${fav.lat}" data-lon="${fav.lon}" data-name="${fav.name}" data-country="${fav.country}">
+                <div class="fav-item-info">
+                    <span class="fav-item-name">${fav.name}</span>
+                    <span class="fav-item-country">${fav.country}</span>
+                </div>
+                <button class="fav-remove-btn" data-name="${fav.name}" title="Remover">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        `).join('');
+        
+        // Click on fav item to load city
+        DOM.favoritesList.querySelectorAll('.fav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                if (e.target.closest('.fav-remove-btn')) return;
+                const lat = parseFloat(item.dataset.lat);
+                const lon = parseFloat(item.dataset.lon);
+                loadCity(lat, lon, item.dataset.name, item.dataset.country);
+                DOM.favoritesDropdown.classList.add('hidden');
+            });
+        });
+        
+        // Click remove button
+        DOM.favoritesList.querySelectorAll('.fav-remove-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const name = btn.dataset.name;
+                const favs = getFavorites().filter(f => f.name !== name);
+                saveFavorites(favs);
+                renderFavoritesList();
+                updateFavStar();
+            });
+        });
+    }
+
+    // -----------------------------------
+    // Language Selector
+    // -----------------------------------
+    function setupLanguageSelector() {
+        const langBtn = document.getElementById('langBtn');
+        const langDropdown = document.getElementById('langDropdown');
+        
+        langBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            langDropdown.classList.toggle('hidden');
+        });
+        
+        document.querySelectorAll('.lang-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                const lang = opt.dataset.lang;
+                i18n.setLang(lang);
+                applyLanguage();
+                langDropdown.classList.add('hidden');
+                
+                // Re-render with new language if we have data
+                if (lastWeatherData) {
+                    const interp = WeatherService.getWeatherInterpretation(lastWeatherData.current.weatherCode);
+                    DOM.weatherDesc.textContent = i18n.t('weather')[lastWeatherData.current.weatherCode] || interp.desc;
+                    renderHourlyForecast(lastWeatherData.hourly);
+                    renderForecastList(lastWeatherData.daily);
+                    checkWeatherAlerts(lastWeatherData.current);
+                    runAIAnalysis(lastWeatherData);
+                }
+            });
+        });
+    }
+
+    function applyLanguage() {
+        // Update static text elements
+        DOM.searchInput.placeholder = i18n.t('searchPlaceholder');
+        
+        // Update language selector active state
+        document.querySelectorAll('.lang-option').forEach(opt => {
+            opt.classList.toggle('active', opt.dataset.lang === i18n.current);
+        });
+
+        // Update static labels
+        const labels = {
+            '.hero-panel .metric-label': [
+                i18n.t('humidity'), i18n.t('wind'), i18n.t('pressure'), 
+                i18n.t('uv'), i18n.t('pm25'), i18n.t('visibility')
             ]
         };
-
-        const pool = messages[prediction.level] || messages.safe;
-        return pool[Math.floor(Math.random() * pool.length)];
+        
+        // Hourly section
+        const hourlyTitle = document.querySelector('.hourly-section .panel-header h3');
+        if (hourlyTitle) hourlyTitle.innerHTML = `<i class="fa-solid fa-clock neon-text-blue"></i> ${i18n.t('hourlyTitle')}`;
+        
+        const hourlyBadge = document.querySelector('.hourly-section .panel-header .badge');
+        if (hourlyBadge) hourlyBadge.textContent = i18n.t('hourlyBadge');
+        
+        // Radar
+        const radarTitle = document.querySelector('.map-panel .panel-header h3');
+        if (radarTitle) radarTitle.innerHTML = `<i class="fa-solid fa-satellite-dish neon-text-blue blink-anim"></i> ${i18n.t('radarTitle')}`;
+        
+        const radarBadge = document.querySelector('.map-panel .live-badge');
+        if (radarBadge) radarBadge.textContent = i18n.t('radarLive');
+        
+        // Chart
+        const chartTitle = document.querySelector('.chart-panel .panel-header h3');
+        if (chartTitle) chartTitle.innerHTML = `<i class="fa-solid fa-chart-area neon-text-purple"></i> ${i18n.t('chartTitle')}`;
+        
+        // Weekly
+        const weeklyTitle = document.querySelector('.daily-cards-section .panel-header h3');
+        if (weeklyTitle) weeklyTitle.innerHTML = `<i class="fa-solid fa-calendar-days neon-text-green"></i> ${i18n.t('weeklyTitle')}`;
+        
+        const weeklyBadge = document.querySelector('.daily-cards-section .panel-header .badge');
+        if (weeklyBadge) weeklyBadge.textContent = i18n.t('weeklyBadge');
+        
+        // Favorites header
+        const favHeader = document.querySelector('.favorites-header h4');
+        if (favHeader) favHeader.innerHTML = `<i class="fa-solid fa-star neon-text-purple"></i> ${i18n.t('savedCities')}`;
     }
 });
+

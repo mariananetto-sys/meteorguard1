@@ -8,6 +8,7 @@ class MeteorGuardAI {
         this.model = null;
         this.isReady = false;
         this.trainingLog = [];
+        this.modelKey = 'meteorguard-model';
         
         // Normalização dos inputs (min/max para cada feature)
         this.featureRanges = {
@@ -62,10 +63,10 @@ class MeteorGuardAI {
             activation: 'sigmoid'
         }));
 
-        // Compilar o modelo com otimizador Adam (lr=0.001 para estabilidade)
+        // Compilar com BCE (correto para classificação probabilística 0→1)
         this.model.compile({
             optimizer: tf.train.adam(0.001),
-            loss: 'meanSquaredError',
+            loss: 'binaryCrossentropy',
             metrics: ['accuracy']
         });
 
@@ -80,8 +81,8 @@ class MeteorGuardAI {
         const inputs = [];
         const outputs = [];
 
-        // ---- CENÁRIOS SEGUROS (output ≈ 0.0 a 0.2) ----
-        for (let i = 0; i < 80; i++) {
+        // ---- CENÁRIOS SEGUROS (70 amostras, balanceado) ----
+        for (let i = 0; i < 70; i++) {
             inputs.push([
                 this.rand(15, 32),    // temp agradável
                 this.rand(30, 60),    // umidade normal
@@ -98,8 +99,8 @@ class MeteorGuardAI {
             outputs.push([this.rand(0, 0.15)]);
         }
 
-        // ---- CENÁRIOS DE ATENÇÃO LEVE (output ≈ 0.2 a 0.4) ----
-        for (let i = 0; i < 60; i++) {
+        // ---- CENÁRIOS DE ATENÇÃO LEVE (70 amostras, balanceado) ----
+        for (let i = 0; i < 70; i++) {
             inputs.push([
                 this.rand(10, 28),
                 this.rand(55, 75),    // umidade subindo
@@ -116,8 +117,8 @@ class MeteorGuardAI {
             outputs.push([this.rand(0.2, 0.4)]);
         }
 
-        // ---- CENÁRIOS DE ATENÇÃO MODERADA (output ≈ 0.4 a 0.65) ----
-        for (let i = 0; i < 60; i++) {
+        // ---- CENÁRIOS DE ATENÇÃO MODERADA (70 amostras, balanceado) ----
+        for (let i = 0; i < 70; i++) {
             inputs.push([
                 this.rand(8, 25),
                 this.rand(70, 90),    // umidade alta
@@ -134,8 +135,8 @@ class MeteorGuardAI {
             outputs.push([this.rand(0.4, 0.65)]);
         }
 
-        // ---- CENÁRIOS DE PERIGO (output ≈ 0.65 a 0.85) ----
-        for (let i = 0; i < 50; i++) {
+        // ---- CENÁRIOS DE PERIGO (70 amostras, balanceado) ----
+        for (let i = 0; i < 70; i++) {
             inputs.push([
                 this.rand(5, 20),
                 this.rand(85, 98),    // umidade muito alta
@@ -152,8 +153,8 @@ class MeteorGuardAI {
             outputs.push([this.rand(0.65, 0.85)]);
         }
 
-        // ---- CENÁRIOS DE RISCO EXTREMO (output ≈ 0.85 a 1.0) ----
-        for (let i = 0; i < 50; i++) {
+        // ---- CENÁRIOS DE RISCO EXTREMO (70 amostras, balanceado) ----
+        for (let i = 0; i < 70; i++) {
             inputs.push([
                 this.rand(-5, 15),
                 this.rand(90, 100),   // saturação total
@@ -174,45 +175,81 @@ class MeteorGuardAI {
     }
 
     // ==========================================
-    // STEP 3: Treinar a rede neural
+    // STEP 3: Treinar a rede neural (ou carregar do cache)
     // ==========================================
     async train(onProgress) {
-        console.log('[METEORGUARD AI] Iniciando treinamento da rede neural...');
+        // Tentar carregar modelo salvo do localStorage
+        try {
+            const savedModel = await tf.loadLayersModel('localstorage://' + this.modelKey);
+            this.model = savedModel;
+            this.model.compile({
+                optimizer: tf.train.adam(0.001),
+                loss: 'binaryCrossentropy',
+                metrics: ['accuracy']
+            });
+            this.isReady = true;
+            console.log('[METEORGUARD AI] ⚡ Modelo carregado do cache! Treinamento pulado.');
+            if (onProgress) onProgress(60, 60, { loss: 0, accuracy: 1 });
+            return;
+        } catch (e) {
+            console.log('[METEORGUARD AI] Nenhum modelo salvo. Iniciando treinamento...');
+        }
+
+        console.log('[METEORGUARD AI] Iniciando treinamento da rede neural (350 cenários)...');
         
         const data = this.generateTrainingData();
         
-        // Normalizar os inputs para 0-1
+        // Normalizar os inputs para 0-1 (com clamp)
         const normalizedInputs = data.inputs.map(row => this.normalizeInput(row));
         
         // Converter para tensores TensorFlow
         const xs = tf.tensor2d(normalizedInputs);
         const ys = tf.tensor2d(data.outputs);
 
-        // Treinar por 60 épocas (lr menor = precisa de mais épocas)
+        // Early stopping para evitar overfitting
+        const earlyStopping = tf.callbacks.earlyStopping({
+            monitor: 'val_loss',
+            patience: 8
+        });
+
+        // Treinar por até 60 épocas (early stopping pode parar antes)
         const history = await this.model.fit(xs, ys, {
             epochs: 60,
             batchSize: 16,
             validationSplit: 0.2,
             shuffle: true,
-            callbacks: {
-                onEpochEnd: async (epoch, logs) => {
-                    this.trainingLog.push({
-                        epoch: epoch + 1,
-                        loss: logs.loss.toFixed(4),
-                        accuracy: (logs.acc * 100).toFixed(1)
-                    });
-                    if (onProgress) {
-                        onProgress(epoch + 1, 60, logs);
+            callbacks: [
+                earlyStopping,
+                {
+                    onEpochEnd: async (epoch, logs) => {
+                        this.trainingLog.push({
+                            epoch: epoch + 1,
+                            loss: logs.loss.toFixed(4),
+                            accuracy: ((logs.accuracy || logs.acc || 0) * 100).toFixed(1)
+                        });
+                        if (onProgress) {
+                            onProgress(epoch + 1, 60, {
+                                loss: logs.loss,
+                                acc: logs.accuracy || logs.acc || 0
+                            });
+                        }
+                        await tf.nextFrame();
                     }
-                    // Libera a UI thread para não travar o navegador
-                    await tf.nextFrame();
                 }
-            }
+            ]
         });
 
         // Limpar tensores da memória
         xs.dispose();
         ys.dispose();
+
+        // Salvar modelo no localStorage para próxima visita
+        try {
+            await this.model.save('localstorage://' + this.modelKey);
+            console.log('[METEORGUARD AI] 💾 Modelo salvo no cache do navegador.');
+        } catch (e) {
+            console.warn('[METEORGUARD AI] Não foi possível salvar modelo:', e);
+        }
 
         this.isReady = true;
         console.log('[METEORGUARD AI] ✅ Treinamento concluído! Rede neural operacional.');
@@ -223,7 +260,7 @@ class MeteorGuardAI {
     // ==========================================
     // STEP 4: Fazer predições com a rede neural
     // ==========================================
-    predict(weatherData) {
+    async predict(weatherData) {
         if (!this.isReady || !this.model) {
             return this.fallbackPrediction(weatherData);
         }
@@ -246,13 +283,14 @@ class MeteorGuardAI {
         // Normalizar
         const normalized = this.normalizeInput(inputVector);
         
-        // Predição
+        // Predição (assíncrona para não bloquear UI)
         const tensor = tf.tensor2d([normalized]);
-        const prediction = this.model.predict(tensor);
-        const riskScore = prediction.dataSync()[0];
+        const predTensor = this.model.predict(tensor);
+        const riskData = await predTensor.data();
+        const riskScore = riskData[0];
         
         tensor.dispose();
-        prediction.dispose();
+        predTensor.dispose();
 
         return this.interpretPrediction(riskScore, weatherData);
     }
@@ -428,37 +466,37 @@ class MeteorGuardAI {
         const percentage = Math.round(riskScore * 100);
         const observations = [];
 
-        // --- FASE 1: Analisar cada sensor e gerar observações com peso ---
+        // --- FASE 1: Analisar cada parâmetro e gerar observações ---
 
         // Temperatura
         const temp = data.temperature || 20;
         if (temp > 38) {
             observations.push({ weight: 9, text: this.pick([
-                `A temperatura atingiu ${temp.toFixed(1)}°C, um nível considerado perigoso para a saúde humana`,
-                `Registrei ${temp.toFixed(1)}°C nos sensores — estamos em uma zona de calor extremo`,
-                `Com ${temp.toFixed(1)}°C, o risco de desidratação e insolação é real`
+                `a temperatura chegou a ${temp.toFixed(1)}°C, nível perigoso para a saúde`,
+                `com ${temp.toFixed(1)}°C, o calor extremo exige atenção redobrada`,
+                `os ${temp.toFixed(1)}°C registrados representam risco de desidratação e insolação`
             ])});
         } else if (temp > 32) {
             observations.push({ weight: 5, text: this.pick([
-                `a temperatura está em ${temp.toFixed(1)}°C, acima da média de conforto`,
-                `os sensores registram ${temp.toFixed(1)}°C de temperatura ambiente`,
-                `o termômetro marca ${temp.toFixed(1)}°C neste momento`
+                `a temperatura está em ${temp.toFixed(1)}°C, acima do confortável`,
+                `faz calor com ${temp.toFixed(1)}°C no momento`,
+                `os termômetros marcam ${temp.toFixed(1)}°C na região`
             ])});
         } else if (temp < 5) {
             observations.push({ weight: 8, text: this.pick([
-                `A temperatura despencou para ${temp.toFixed(1)}°C — condições de frio intenso`,
-                `Com apenas ${temp.toFixed(1)}°C, exposição prolongada pode causar hipotermia`
+                `a temperatura caiu para ${temp.toFixed(1)}°C, frio intenso na região`,
+                `com apenas ${temp.toFixed(1)}°C, o frio pode ser perigoso para quem ficar exposto`
             ])});
         } else if (temp < 15) {
             observations.push({ weight: 4, text: this.pick([
-                `a temperatura está em ${temp.toFixed(1)}°C, relativamente fria`,
-                `os sensores indicam ${temp.toFixed(1)}°C — recomendo agasalho`
+                `a temperatura está em ${temp.toFixed(1)}°C, um pouco fria para a época`,
+                `com ${temp.toFixed(1)}°C, vale a pena levar um agasalho`
             ])});
         } else {
             observations.push({ weight: 2, text: this.pick([
-                `a temperatura está em ${temp.toFixed(1)}°C, dentro da faixa de conforto`,
-                `registrei ${temp.toFixed(1)}°C, temperatura agradável`,
-                `os sensores marcam ${temp.toFixed(1)}°C no momento`
+                `a temperatura está agradável em ${temp.toFixed(1)}°C`,
+                `com ${temp.toFixed(1)}°C, o clima está confortável`,
+                `a temperatura de ${temp.toFixed(1)}°C é ideal para o dia`
             ])});
         }
 
@@ -466,18 +504,18 @@ class MeteorGuardAI {
         const hum = data.humidity || 50;
         if (hum > 90) {
             observations.push({ weight: 6, text: this.pick([
-                `a umidade relativa está em ${hum}%, próximo da saturação total do ar`,
-                `com ${hum}% de umidade, o ar está extremamente pesado e abafado`
+                `a umidade do ar está em ${hum}%, deixando o ambiente muito abafado`,
+                `com ${hum}% de umidade, a sensação de calor aumenta bastante`
             ])});
         } else if (hum < 30) {
             observations.push({ weight: 6, text: this.pick([
-                `a umidade relativa caiu para ${hum}%, um nível preocupante para o sistema respiratório`,
-                `com apenas ${hum}% de umidade, o ar está muito seco`
+                `a umidade do ar está em apenas ${hum}%, o que pode causar desconforto respiratório`,
+                `com ${hum}% de umidade, o ar seco pode provocar sangramento nasal e irritação na garganta`
             ])});
         } else {
             observations.push({ weight: 1, text: this.pick([
-                `umidade em ${hum}%`,
-                `a umidade está estável em ${hum}%`
+                `a umidade está em ${hum}%, normal para o período`,
+                `a umidade do ar marca ${hum}%`
             ])});
         }
 
@@ -486,23 +524,23 @@ class MeteorGuardAI {
         const gusts = data.windGusts || 0;
         if (gusts > 90) {
             observations.push({ weight: 10, text: this.pick([
-                `Rajadas de vento atingiram ${gusts.toFixed(1)} km/h — ventos destrutivos que podem derrubar árvores e destelhamentos`,
-                `ALERTA: rajadas de ${gusts.toFixed(1)} km/h detectadas, equivalente à intensidade de uma tempestade tropical`
+                `as rajadas de vento chegam a ${gusts.toFixed(1)} km/h, podendo derrubar árvores e arrancar telhas`,
+                `rajadas de ${gusts.toFixed(1)} km/h foram registradas — vento com potencial destrutivo`
             ])});
         } else if (wind > 50) {
             observations.push({ weight: 8, text: this.pick([
-                `ventos fortes de ${wind.toFixed(1)} km/h com rajadas de ${gusts.toFixed(1)} km/h estão varrendo a região`,
-                `o anemômetro registra ${wind.toFixed(1)} km/h de vento sustentado — objetos leves podem ser arremessados`
+                `o vento está forte em ${wind.toFixed(1)} km/h com rajadas de ${gusts.toFixed(1)} km/h`,
+                `ventos de ${wind.toFixed(1)} km/h estão varrendo a região com força`
             ])});
         } else if (wind > 25) {
             observations.push({ weight: 4, text: this.pick([
-                `ventos moderados de ${wind.toFixed(1)} km/h sopram na região`,
-                `o vento está em ${wind.toFixed(1)} km/h, forte o suficiente para inverter guarda-chuvas`
+                `sopram ventos de ${wind.toFixed(1)} km/h, moderados mas perceptíveis`,
+                `o vento está em ${wind.toFixed(1)} km/h — cuidado com guarda-chuvas`
             ])});
         } else {
             observations.push({ weight: 1, text: this.pick([
-                `ventos calmos de ${wind.toFixed(1)} km/h`,
-                `o vento está brando em ${wind.toFixed(1)} km/h`
+                `o vento está calmo em ${wind.toFixed(1)} km/h`,
+                `pouco vento na região, apenas ${wind.toFixed(1)} km/h`
             ])});
         }
 
@@ -510,23 +548,23 @@ class MeteorGuardAI {
         const rain = data.precipitation || 0;
         if (rain > 30) {
             observations.push({ weight: 10, text: this.pick([
-                `A precipitação é de ${rain.toFixed(1)} mm/h — chuva torrencial com alto risco de alagamentos`,
-                `Chovendo ${rain.toFixed(1)} mm/h, nível que a Defesa Civil classifica como emergência`
+                `a chuva está torrencial com ${rain.toFixed(1)} mm/h — risco real de alagamentos e deslizamentos`,
+                `chove ${rain.toFixed(1)} mm/h, nível de emergência segundo a Defesa Civil`
             ])});
         } else if (rain > 10) {
             observations.push({ weight: 7, text: this.pick([
-                `a chuva é intensa com ${rain.toFixed(1)} mm/h — bueiros podem transbordar em áreas urbanas`,
-                `precipitação de ${rain.toFixed(1)} mm/h detectada, classificada como chuva forte`
+                `a chuva é forte com ${rain.toFixed(1)} mm/h, podendo causar alagamentos pontuais`,
+                `está chovendo ${rain.toFixed(1)} mm/h — evite áreas de encosta e margens de rio`
             ])});
         } else if (rain > 2) {
             observations.push({ weight: 5, text: this.pick([
-                `está chovendo moderadamente (${rain.toFixed(1)} mm/h)`,
-                `a precipitação está em ${rain.toFixed(1)} mm/h — recomendo guarda-chuva`
+                `está chovendo moderadamente, ${rain.toFixed(1)} mm/h`,
+                `a chuva marca ${rain.toFixed(1)} mm/h — leve guarda-chuva se for sair`
             ])});
         } else if (rain > 0) {
             observations.push({ weight: 3, text: this.pick([
-                `há uma garoa leve de ${rain.toFixed(1)} mm/h`,
-                `detectei precipitação fraca de ${rain.toFixed(1)} mm/h`
+                `há uma garoa leve de ${rain.toFixed(1)} mm/h na região`,
+                `chove fino, apenas ${rain.toFixed(1)} mm/h por enquanto`
             ])});
         }
 
@@ -534,18 +572,18 @@ class MeteorGuardAI {
         const pressure = data.pressureMsl || 1013;
         if (pressure < 990) {
             observations.push({ weight: 8, text: this.pick([
-                `A pressão atmosférica está em ${pressure.toFixed(0)} hPa, um indicador de formação ciclônica ou tempestade severa se aproximando`,
-                `Com ${pressure.toFixed(0)} hPa de pressão, meus algoritmos identificam instabilidade barométrica significativa`
+                `a pressão atmosférica despencou para ${pressure.toFixed(0)} hPa, sinal de tempestade se formando`,
+                `com ${pressure.toFixed(0)} hPa de pressão, há forte instabilidade no ar`
             ])});
         } else if (pressure < 1005) {
             observations.push({ weight: 4, text: this.pick([
-                `a pressão está em queda (${pressure.toFixed(0)} hPa), sinalizando possível piora nas próximas horas`,
-                `barômetro em ${pressure.toFixed(0)} hPa — tendência de instabilidade`
+                `a pressão está em queda (${pressure.toFixed(0)} hPa), o que pode indicar chuva nas próximas horas`,
+                `o barômetro marca ${pressure.toFixed(0)} hPa — tendência de piora`
             ])});
         } else if (pressure > 1025) {
             observations.push({ weight: 2, text: this.pick([
-                `a pressão atmosférica está alta e estável em ${pressure.toFixed(0)} hPa, bom sinal de tempo firme`,
-                `barômetro em ${pressure.toFixed(0)} hPa indica estabilidade atmosférica`
+                `a pressão está estável em ${pressure.toFixed(0)} hPa, indicando tempo firme`,
+                `com ${pressure.toFixed(0)} hPa, a atmosfera está bem estável`
             ])});
         }
 
@@ -553,13 +591,13 @@ class MeteorGuardAI {
         const vis = data.visibility || 20000;
         if (vis < 500) {
             observations.push({ weight: 9, text: this.pick([
-                `A visibilidade é crítica: apenas ${(vis / 1000).toFixed(1)} km. Neblina densa ou chuva forte comprometem completamente a visão`,
-                `Visibilidade em ${(vis / 1000).toFixed(1)} km — condições extremamente perigosas para motoristas`
+                `a visibilidade é de apenas ${(vis / 1000).toFixed(1)} km — neblina densa ou chuva forte impedem a visão`,
+                `com ${(vis / 1000).toFixed(1)} km de visibilidade, dirigir é extremamente perigoso`
             ])});
         } else if (vis < 3000) {
             observations.push({ weight: 5, text: this.pick([
-                `a visibilidade está reduzida para ${(vis / 1000).toFixed(1)} km`,
-                `neblina reduz a visibilidade para ${(vis / 1000).toFixed(1)} km`
+                `a visibilidade está reduzida para ${(vis / 1000).toFixed(1)} km — atenção no trânsito`,
+                `há neblina reduzindo a visibilidade para ${(vis / 1000).toFixed(1)} km`
             ])});
         }
 
@@ -567,13 +605,13 @@ class MeteorGuardAI {
         const uv = data.uvIndex || 0;
         if (uv >= 11) {
             observations.push({ weight: 7, text: this.pick([
-                `O índice UV está em ${uv.toFixed(1)}, nível extremo — queimaduras de pele em menos de 10 minutos sem proteção`,
-                `UV extremo de ${uv.toFixed(1)} detectado. Protetor solar FPS 50+ é obrigatório`
+                `o índice UV está extremo em ${uv.toFixed(1)} — é possível se queimar em menos de 10 minutos`,
+                `UV em ${uv.toFixed(1)}: protetor solar FPS 50+ e chapéu são indispensáveis`
             ])});
         } else if (uv >= 8) {
             observations.push({ weight: 5, text: this.pick([
-                `o índice UV está muito alto em ${uv.toFixed(1)} — protetor solar é essencial`,
-                `UV em ${uv.toFixed(1)}, nível considerado muito alto pela OMS`
+                `o UV está muito alto em ${uv.toFixed(1)} — use protetor solar`,
+                `com UV ${uv.toFixed(1)}, a radiação solar pode causar danos à pele em poucos minutos`
             ])});
         }
 
@@ -581,18 +619,18 @@ class MeteorGuardAI {
         const pm = data.pm25 || 10;
         if (pm > 150) {
             observations.push({ weight: 8, text: this.pick([
-                `A qualidade do ar é péssima com PM2.5 em ${pm.toFixed(0)} µg/m³ — nocivo para todos, especialmente crianças e idosos`,
-                `Partículas finas PM2.5 em ${pm.toFixed(0)} µg/m³ — o ar é insalubre. Use máscara ao sair`
+                `a qualidade do ar é péssima, com PM2.5 em ${pm.toFixed(0)} µg/m³ — prejudicial para todos`,
+                `o ar está poluído com ${pm.toFixed(0)} µg/m³ de partículas finas — use máscara ao sair`
             ])});
         } else if (pm > 55) {
             observations.push({ weight: 5, text: this.pick([
-                `a qualidade do ar está comprometida (PM2.5: ${pm.toFixed(0)} µg/m³)`,
-                `PM2.5 em ${pm.toFixed(0)} µg/m³ — ar insatisfatório para grupos sensíveis`
+                `a qualidade do ar não está boa (PM2.5: ${pm.toFixed(0)} µg/m³)`,
+                `o nível de poluição está elevado com PM2.5 em ${pm.toFixed(0)} µg/m³`
             ])});
         } else if (pm <= 25) {
             observations.push({ weight: 1, text: this.pick([
-                `o ar está limpo com PM2.5 em ${pm.toFixed(0)} µg/m³`,
-                `qualidade do ar boa (PM2.5: ${pm.toFixed(0)} µg/m³)`
+                `o ar está limpo e saudável (PM2.5: ${pm.toFixed(0)} µg/m³)`,
+                `a qualidade do ar é boa com PM2.5 em ${pm.toFixed(0)} µg/m³`
             ])});
         }
 
@@ -600,59 +638,56 @@ class MeteorGuardAI {
         const clouds = data.cloudCover || 0;
         if (clouds > 90) {
             observations.push({ weight: 2, text: this.pick([
-                `o céu está completamente encoberto (${clouds}% de cobertura)`,
-                `nuvens cobrem ${clouds}% do céu, sem previsão de aberturas de sol`
+                `o céu está totalmente encoberto, ${clouds}% coberto por nuvens`,
+                `não há aberturas no céu — ${clouds}% de cobertura de nuvens`
             ])});
         } else if (clouds < 15) {
             observations.push({ weight: 1, text: this.pick([
-                `o céu está limpo com apenas ${clouds}% de nuvens`,
-                `praticamente sem nuvens no céu (${clouds}%)`
+                `o céu está limpo e aberto com apenas ${clouds}% de nuvens`,
+                `praticamente sem nuvens (${clouds}%), sol predominante`
             ])});
         }
 
-        // --- FASE 2: Ordenar por peso (relevância) ---
+        // --- FASE 2: Ordenar por relevância ---
         observations.sort((a, b) => b.weight - a.weight);
 
-        // --- FASE 3: Compor o texto final ---
-        const topObs = observations.slice(0, 3); // Pegar as 3 mais relevantes
+        // --- FASE 3: Compor o texto ---
+        const topObs = observations.slice(0, 3);
 
-        // Introdução baseada no risco
         let intro;
         if (riskScore < 0.2) {
             intro = this.pick([
-                'Concluí minha varredura dos sensores ambientais.',
-                'Análise dos 11 parâmetros atmosféricos finalizada.',
-                'Processamento dos dados meteorológicos concluído.',
-                'Minha rede neural processou todos os indicadores disponíveis.'
+                'Condições climáticas favoráveis no momento.',
+                'O tempo está bom e estável na região.',
+                'Sem alertas meteorológicos para agora.',
+                'Boletim climático: tudo tranquilo.'
             ]);
         } else if (riskScore < 0.4) {
             intro = this.pick([
-                'Identifiquei alguns pontos de atenção na minha análise.',
-                'Meus sensores detectaram condições que merecem monitoramento.',
-                'A varredura revelou parâmetros fora da zona ideal.'
+                'Algumas condições merecem atenção.',
+                'O tempo apresenta leve instabilidade.',
+                'Há pontos de atenção no clima da região.',
+                'Boletim com ressalvas para as próximas horas.'
             ]);
         } else if (riskScore < 0.65) {
             intro = this.pick([
-                'Atenção. Minha análise identificou condições meteorológicas adversas.',
-                'Alerta moderado emitido após processamento dos dados ambientais.',
-                'Os dados analisados indicam deterioração significativa das condições.'
+                'Atenção: condições climáticas adversas na região.',
+                'O tempo está instável e requer cautela.',
+                'Alerta meteorológico moderado em vigor.'
             ]);
         } else {
             intro = this.pick([
-                'ALERTA CRÍTICO. Múltiplos sensores estão em zona de perigo.',
-                'ATENÇÃO MÁXIMA. A análise neural indica risco elevado para a região.',
-                'EMERGÊNCIA DETECTADA. Os parâmetros ambientais estão em níveis críticos.'
+                'ALERTA: condições climáticas perigosas na região.',
+                'Situação meteorológica crítica em andamento.',
+                'Alerta de emergência climática ativo.'
             ]);
         }
 
-        // Conectores para unir observações
-        const connectors = [' Além disso, ', ' Também observo que ', ' Adicionalmente, ', ' Complementando, '];
+        const connectors = [' Além disso, ', ' Também, ', ' No mais, ', ' E ainda, '];
 
-        // Montar o parágrafo
         let text = intro + ' ';
         
         if (topObs.length >= 1) {
-            // Capitalizar primeira observação
             const first = topObs[0].text;
             text += first.charAt(0).toUpperCase() + first.slice(1) + '.';
         }
@@ -662,27 +697,27 @@ class MeteorGuardAI {
         }
         
         if (topObs.length >= 3) {
-            text += ' ' + this.pick(['Por fim, ', 'Quanto ao restante, ', 'Nos demais indicadores, ', '']) + topObs[2].text + '.';
+            text += ' ' + this.pick(['', 'Quanto ao resto, ', 'Para completar, ']) + topObs[2].text + '.';
         }
 
-        // Conclusão baseada no risco
+        // Conclusão
         if (riskScore < 0.2) {
             text += this.pick([
-                ` Conclusão: risco calculado em ${percentage}%. Condições favoráveis.`,
-                ` Meu veredito: ${percentage}% de risco. Aproveite o dia com tranquilidade.`,
-                ` Resultado da análise neural: ${percentage}% de probabilidade de risco. Tudo dentro da normalidade.`
+                ` Risco geral: ${percentage}%. Aproveite o dia!`,
+                ` Avaliação: ${percentage}% de risco. Boas condições para sair.`,
+                ` Nível de risco: ${percentage}%. Dia favorável.`
             ]);
         } else if (riskScore < 0.65) {
             text += this.pick([
-                ` Risco avaliado em ${percentage}%. Tome precauções.`,
-                ` Minha rede neural calcula ${percentage}% de risco. Fique atento.`,
-                ` Probabilidade de risco: ${percentage}%. Monitore as condições nas próximas horas.`
+                ` Risco geral: ${percentage}%. Fique atento e tome precauções.`,
+                ` Avaliação: ${percentage}% de risco. Monitore as condições.`,
+                ` Nível de risco: ${percentage}%. Cuidado redobrado.`
             ]);
         } else {
             text += this.pick([
-                ` Risco avaliado em ${percentage}%. Procure abrigo seguro imediatamente.`,
-                ` RISCO: ${percentage}%. Evite deslocamentos e permaneça em local seguro.`,
-                ` Probabilidade de evento adverso: ${percentage}%. Siga as orientações de segurança.`
+                ` Risco geral: ${percentage}%. Procure abrigo imediatamente.`,
+                ` NÍVEL CRÍTICO: ${percentage}% de risco. Evite sair de casa.`,
+                ` Risco: ${percentage}%. Siga as orientações de segurança.`
             ]);
         }
 
@@ -701,7 +736,8 @@ class MeteorGuardAI {
         const keys = Object.keys(this.featureRanges);
         return inputVector.map((val, i) => {
             const range = this.featureRanges[keys[i]];
-            return (val - range.min) / (range.max - range.min);
+            const normalized = (val - range.min) / (range.max - range.min);
+            return Math.max(0, Math.min(1, normalized)); // Clamp entre 0 e 1
         });
     }
 

@@ -10,7 +10,7 @@
 class WeatherService {
     static async getWeather(lat, lon) {
         // Open-Meteo Forecast API — busca TODOS os dados ambientais disponíveis
-        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_gusts_10m,surface_pressure,cloud_cover,visibility&hourly=precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max&timezone=auto`;
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_gusts_10m,surface_pressure,cloud_cover,visibility&hourly=temperature_2m,weather_code,precipitation_probability,precipitation,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max&timezone=auto&forecast_hours=24`;
 
         // Open-Meteo Air Quality API — qualidade do ar em tempo real
         const airQualityUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm2_5,pm10,uv_index`;
@@ -32,6 +32,23 @@ class WeatherService {
                 airData = await airRes.json();
             }
             
+            // Montar dados horários (próximas 24h)
+            const hourlyData = [];
+            if (weatherData.hourly) {
+                const now = new Date();
+                for (let i = 0; i < Math.min(24, weatherData.hourly.time.length); i++) {
+                    hourlyData.push({
+                        time: weatherData.hourly.time[i],
+                        temp: weatherData.hourly.temperature_2m[i],
+                        weatherCode: weatherData.hourly.weather_code[i],
+                        rainProb: weatherData.hourly.precipitation_probability?.[i] || 0,
+                        precipitation: weatherData.hourly.precipitation?.[i] || 0,
+                        windSpeed: weatherData.hourly.wind_speed_10m?.[i] || 0,
+                        humidity: weatherData.hourly.relative_humidity_2m?.[i] || 50
+                    });
+                }
+            }
+
             // Mapa completo com TODAS as informações ambientais
             return {
                 current: {
@@ -50,6 +67,7 @@ class WeatherService {
                     pm10: airData.current?.pm10 || 15,
                     uvIndex: airData.current?.uv_index || weatherData.daily?.uv_index_max?.[0] || 3
                 },
+                hourly: hourlyData,
                 daily: weatherData.daily.time.map((time, index) => ({
                     date: time,
                     maxTemp: weatherData.daily.temperature_2m_max[index],
@@ -60,6 +78,7 @@ class WeatherService {
                     uvMax: weatherData.daily.uv_index_max?.[index] || 0
                 }))
             };
+
         } catch (error) {
             console.error("WeatherService Error:", error);
             throw error;
