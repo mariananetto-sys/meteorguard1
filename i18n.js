@@ -12,12 +12,11 @@ const i18n = {
             searchPlaceholder: 'Buscar cidade...',
             savedCities: 'Cidades Salvas',
             noSavedCities: 'Nenhuma cidade salva ainda',
-            myLocation: 'Usar minha localização',
-
-            // Loading
-            loading: 'Sincronizando satélites...',
-            locating: 'Localizando coordenadas',
+            myLocation: 'Localização Atual',
             loadingCity: 'Carregando...',
+            locating: 'Localizando coordenadas...',
+            geoCoords: 'Coordenadas GPS',
+            waitingData: 'Aguardando dados ambientais...',
 
             // Hero Panel
             feelsLike: 'Sensação',
@@ -182,11 +181,11 @@ const i18n = {
             searchPlaceholder: 'Search city...',
             savedCities: 'Saved Cities',
             noSavedCities: 'No saved cities yet',
-            myLocation: 'Use my location',
-
-            loading: 'Syncing satellites...',
-            locating: 'Locating coordinates',
+            myLocation: 'Current Location',
             loadingCity: 'Loading...',
+            locating: 'Locating coordinates...',
+            geoCoords: 'GPS Coordinates',
+            waitingData: 'Waiting for environmental data...',
 
             feelsLike: 'Feels Like',
             precipitation: 'Precipitation',
@@ -342,11 +341,11 @@ const i18n = {
             searchPlaceholder: 'Buscar ciudad...',
             savedCities: 'Ciudades Guardadas',
             noSavedCities: 'Ninguna ciudad guardada',
-            myLocation: 'Usar mi ubicación',
-
-            loading: 'Sincronizando satélites...',
-            locating: 'Localizando coordenadas',
+            myLocation: 'Ubicación Actual',
             loadingCity: 'Cargando...',
+            locating: 'Localizando coordenadas...',
+            geoCoords: 'Coordenadas GPS',
+            waitingData: 'Esperando datos ambientales...',
 
             feelsLike: 'Sensación',
             precipitation: 'Precipitación',

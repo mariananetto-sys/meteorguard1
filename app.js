@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     async function bootAI() {
         isAIBooting = true;
-        console.log('[METEORGUARD] Inicializando motor de IA...');
+        console.log('[METEORGUARD] Initializing AI Risk Engine...');
         
         // Build the model architecture
         meteorGuardAI.buildModel();
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.aiBadge.textContent = i18n.t('aiOnline') || 'PRONTO!';
         DOM.aiBadge.classList.add('active');
 
-        console.log('[METEORGUARD] ✅ IA Neural operacional!');
+        console.log('[METEORGUARD] ✅ AI Neural Model Operational!');
 
         // If weather data was already loaded, re-run AI analysis
         if (lastWeatherData) {
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
             (position) => {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
-                loadCity(lat, lon, "Localização Atual", "Coordenadas GPS");
+                loadCity(lat, lon, i18n.t('myLocation'), i18n.t('geoCoords'));
             },
             (error) => {
                 console.warn('Geolocation permission denied or failed.', error);
@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     async function runAIAnalysis(weatherData) {
         if (isAIBooting) {
-            console.log('[METEORGUARD] Securando análise pendente: IA ainda em treinamento...');
+            console.log('[METEORGUARD] Analysis pending: AI still training...');
             return;
         }
 

@@ -54,28 +54,27 @@ class MeteorGuardAI {
         this.model.add(tf.layers.dense({
             inputShape: [13],
             units: 32,
-            activation: 'leakyRelu', // Switched for better gradient flow
             kernelInitializer: 'heNormal',
-            kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }) // Previne pesos explosivos
+            kernelRegularizer: tf.regularizers.l2({ l2: 0.01 })
         }));
-
+        this.model.add(tf.layers.leakyRelu({alpha: 0.2}));
         this.model.add(tf.layers.dropout({ rate: 0.2 }));
 
         // 2ª camada oculta (16 neurônios)
         this.model.add(tf.layers.dense({
             units: 16,
-            activation: 'leakyRelu',
             kernelInitializer: 'heNormal',
             kernelRegularizer: tf.regularizers.l2({ l2: 0.01 })
         }));
+        this.model.add(tf.layers.leakyRelu({alpha: 0.1}));
         this.model.add(tf.layers.dropout({ rate: 0.1 }));
 
         // 3ª camada oculta (8 neurônios)
         this.model.add(tf.layers.dense({
             units: 8,
-            activation: 'leakyRelu',
             kernelInitializer: 'heNormal'
         }));
+        this.model.add(tf.layers.leakyRelu({alpha: 0.1}));
 
         // Camada de saída (1 neurônio - probabilidade de risco 0 a 1)
         this.model.add(tf.layers.dense({
