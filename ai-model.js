@@ -230,10 +230,7 @@ class MeteorGuardAI {
             batchSize: 32,
             validationSplit: 0.2,
             shuffle: true,
-            callbacks: [
-                callbacks,
-                tf.callbacks.earlyStopping({ monitor: 'val_loss', patience: 5 })
-            ]
+            callbacks: callbacks
         });
 
         // Limpar tensores da memória
