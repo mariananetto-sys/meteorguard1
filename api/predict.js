@@ -36,28 +36,30 @@ export default function handler(req, res) {
         pm25 = 10 
     } = req.body || {};
 
-    // 4. Engenharia de Features Climáticas da nossa IA
-    const stormIndex = windSpeed * precipitation;
-    const instability = Math.max(0, (1000 - pressureMsl) * humidity);
+    // 4. Engenharia de Features Climáticas (log-scaled + normalizada)
+    const stormIndex = Math.log1p(windSpeed * precipitation);
+    const instability = Math.max(0, (1000 - pressureMsl) * (humidity / 100));
 
     // Algoritmo de Avaliação de Risco (Pipeline Backend Fast-Inference)
     let riskScore = 0.05; // Base safe
 
     if (temperature >= 45 || temperature <= -15) riskScore += 0.85;
     else if (temperature > 38 || temperature < 0) riskScore += 0.3;
-    if (stormIndex > 5000) riskScore += 0.9;
-    else if (stormIndex > 2000) riskScore += 0.6;
-    else if (stormIndex > 500) riskScore += 0.4;
-    else if (stormIndex > 200) riskScore += 0.2;
+    
+    // stormIndex agora é log-scaled (max ~10.3 para 30000)
+    if (stormIndex > 9) riskScore += 0.9;
+    else if (stormIndex > 7) riskScore += 0.6;
+    else if (stormIndex > 5) riskScore += 0.4;
+    else if (stormIndex > 3) riskScore += 0.2;
     
     if (windSpeed > 100) riskScore += 0.3;
 
-    if (instability > 2000) riskScore += 0.6;
-    else if (instability > 1000) riskScore += 0.3;
+    // instability agora é normalizada (max ~60)
+    if (instability > 40) riskScore += 0.6;
+    else if (instability > 20) riskScore += 0.3;
     if (pm25 > 100) riskScore += 0.15;
 
-    // Calibração de limite simulando a regressão que fizemos no Front-end (0.0 a 1.0)
-    riskScore = Math.min(1.0, Math.max(0.0, Math.pow(riskScore, 1.2)));
+    riskScore = Math.min(1.0, Math.max(0.0, riskScore));
     const percentage = Math.round(riskScore * 100);
 
     // Geração de Linguagem Natural (NLG) Clássica

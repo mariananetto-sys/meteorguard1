@@ -8,7 +8,8 @@ class MeteorGuardAI {
         this.model = null;
         this.isReady = false;
         this.trainingLog = [];
-        this.modelKey = 'meteorguard-model-v1';
+        this.modelKey = 'meteorguard-model-v1.1';
+        this._seed = 42; // Seed para reprodutibilidade
         
         // Normalização dos inputs (min/max para cada feature)
         this.featureRanges = {
@@ -23,9 +24,19 @@ class MeteorGuardAI {
             uvIndex:        { min: 0,   max: 12 },
             pm25:           { min: 0,   max: 500 },
             dangerContext:  { min: 0,   max: 3 },
-            stormIndex:     { min: 0,   max: 25000 },
-            instability:    { min: 0,   max: 2000 }
+            stormIndex:     { min: 0,   max: 12 },
+            instability:    { min: 0,   max: 60 }
         };
+    }
+
+    // PRNG com seed para reprodutibilidade (cada usuário treina o mesmo modelo)
+    seededRand() {
+        this._seed = (this._seed * 16807 + 0) % 2147483647;
+        return (this._seed - 1) / 2147483646;
+    }
+
+    rand(min, max) {
+        return this.seededRand() * (max - min) + min;
     }
 
     // ==========================================
@@ -99,8 +110,8 @@ class MeteorGuardAI {
                 this.rand(0, 5),      // uv
                 this.rand(0, 20),     // pm25
                 0,                    // codigo clima (limpo)
-                this.rand(0, 0),      // stormIndex
-                this.rand(0, 0)       // instability
+                0,                    // stormIndex (log1p)
+                0                     // instability (normalizada)
             ]);
             outputs.push([0.0]); // Risco minimo puro
         }
@@ -119,8 +130,8 @@ class MeteorGuardAI {
                 this.rand(3, 7),
                 this.rand(15, 40),
                 1,                     // código: instabilidade
-                this.rand(0, 75),      // stormIndex
-                this.rand(0, 50)       // instability
+                Math.log1p(this.rand(0, 75)),      // stormIndex (log)
+                Math.max(0, (1000 - this.rand(1005, 1015)) * (this.rand(50, 75) / 100))  // instability
             ]);
             outputs.push([0.25]); // Risco leve
         }
@@ -139,8 +150,8 @@ class MeteorGuardAI {
                 this.rand(0, 3),
                 this.rand(30, 80),
                 2,                    // código: chuva moderada
-                this.rand(40, 300),   // stormIndex
-                this.rand(0, 150)     // instability
+                Math.log1p(this.rand(40, 300)),   // stormIndex (log)
+                Math.max(0, (1000 - this.rand(995, 1010)) * (this.rand(70, 90) / 100))  // instability
             ]);
             outputs.push([0.5]); // Risco moderado
         }
@@ -159,8 +170,8 @@ class MeteorGuardAI {
                 this.rand(0, 2),
                 this.rand(50, 150),
                 3,                    // código: tempestade
-                this.rand(400, 2000), // stormIndex
-                this.rand(100, 400)   // instability
+                Math.log1p(this.rand(400, 2000)), // stormIndex (log)
+                Math.max(0, (1000 - this.rand(980, 1000)) * (this.rand(85, 98) / 100))  // instability
             ]);
             outputs.push([0.85]); // Risco de perigo alto
         }
@@ -179,8 +190,8 @@ class MeteorGuardAI {
                 0,
                 this.rand(100, 500),  // qualidade do ar péssima
                 3,                    // código: tempestade severa
-                this.rand(2100, 15000), // stormIndex hiper elevado
-                this.rand(300, 2000)  // instability violenta
+                Math.log1p(this.rand(2100, 30000)), // stormIndex (log)
+                Math.max(0, (1000 - this.rand(940, 985)) * (this.rand(90, 100) / 100))  // instability
             ]);
             outputs.push([1.0]); // Classificação pura 100% perigo
         }
@@ -290,11 +301,11 @@ class MeteorGuardAI {
             return this.fallbackPrediction(data);
         }
 
-        // Engenharia de Features Dinâmica
-        const stormIndex = (data.windSpeed || 0) * (data.precipitation || 0);
+        // Engenharia de Features Dinâmica (com escala logarítmica e normalização)
+        const stormIndex = Math.log1p((data.windSpeed || 0) * (data.precipitation || 0));
         const humidity = data.humidity || 50;
         const pressureMsl = data.pressureMsl || 1013;
-        const instability = Math.max(0, (1000 - pressureMsl) * humidity);
+        const instability = Math.max(0, (1000 - pressureMsl) * (humidity / 100));
 
         // Vector 1x13 format (mesma ordem do treinamento)
         const inputVector = [
@@ -322,8 +333,9 @@ class MeteorGuardAI {
         const riskData = await predTensor.data();
         const rawRisk = riskData[0];
         
-        // Calibração de Risco: ajusta a sensibilidade assintótica p/ melhorar a IA em cenários moderados 
-        const riskScore = Math.min(1.0, Math.max(0.0, Math.pow(rawRisk, 1.2)));
+        // Calibração Híbrida: mistura IA Neural (80%) + Heurística (20%) para robustez
+        const heuristicScore = this.quickHeuristic(data);
+        const riskScore = Math.min(1.0, Math.max(0.0, rawRisk * 0.8 + heuristicScore * 0.2));
         
         tensor.dispose();
         predTensor.dispose();
@@ -608,8 +620,18 @@ class MeteorGuardAI {
         ];
     }
 
-    rand(min, max) {
-        return Math.random() * (max - min) + min;
+    // ==========================================
+    // Heurística rápida para calibração híbrida
+    // ==========================================
+    quickHeuristic(data) {
+        let score = 0;
+        if ((data.temperature || 20) > 40 || (data.temperature || 20) < 0) score += 0.3;
+        if ((data.windSpeed || 0) > 60) score += 0.25;
+        if ((data.precipitation || 0) > 20) score += 0.25;
+        if ((data.pressureMsl || 1013) < 995) score += 0.2;
+        if ((data.pm25 || 10) > 100) score += 0.15;
+        if ((data.visibility || 20000) < 1000) score += 0.1;
+        return Math.min(1.0, score);
     }
 }
 
