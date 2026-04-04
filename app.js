@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         feelsLike: document.getElementById('feelsLike'),
         weatherDesc: document.getElementById('weatherDescription'),
         humidity: document.getElementById('humidity'),
+        precipitationVal: document.getElementById('precipitationVal'),
         windSpeed: document.getElementById('windSpeed'),
         pressure: document.getElementById('pressure'),
         uvIndex: document.getElementById('uvIndex'),
@@ -365,6 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.currentTemp.textContent = `${Math.round(current.temp)}°`;
         DOM.feelsLike.textContent = `${Math.round(current.feelsLike)}°`;
         DOM.weatherDesc.textContent = interpretation.desc;
+        DOM.precipitationVal.textContent = current.precipitation ? current.precipitation.toFixed(1) : '0';
         DOM.humidity.textContent = current.humidity;
         DOM.windSpeed.textContent = current.windSpeed;
 
