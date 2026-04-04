@@ -988,8 +988,16 @@ document.addEventListener('DOMContentLoaded', () => {
             '.hero-panel .metric-label': [
                 i18n.t('humidity'), i18n.t('wind'), i18n.t('pressure'), 
                 i18n.t('uv'), i18n.t('pm25'), i18n.t('visibility')
+            ],
+            '.rain-stats p': [
+                i18n.t('currentRain'), i18n.t('dailyRain')
             ]
         };
+        
+        for (const [selector, texts] of Object.entries(labels)) {
+            const els = document.querySelectorAll(selector);
+            els.forEach((el, i) => { if (texts[i]) el.textContent = texts[i]; });
+        }
         
         // Hourly section
         const hourlyTitle = document.querySelector('.hourly-section .panel-header h3');
