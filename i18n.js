@@ -29,7 +29,7 @@ const i18n = {
             visibility: 'Visibilidade',
 
             // AI Panel
-            aiTitle: 'MeteorGuard IA',
+            aiTitle: 'MeteorGuard AI',
             aiProcessing: 'ANALISANDO...',
             aiOnline: 'PRONTO!',
             aiTraining: 'Assistente: Analisando padrões climáticos históricos...',
@@ -353,7 +353,7 @@ const i18n = {
             visibility: 'Visibilidad',
 
             // AI Panel
-            aiTitle: 'MeteorGuard IA',
+            aiTitle: 'MeteorGuard AI',
             aiProcessing: 'ANALIZANDO...',
             aiOnline: '¡LISTO!',
             aiTraining: 'Asistente: Analizando patrones de clima históricos...',

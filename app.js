@@ -284,6 +284,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Mostrar spinner enquanto a IA processa
+        DOM.riskMessage.innerHTML = '<div class="ai-spinner"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:1.4rem; color:var(--neon-blue); opacity:0.7;"></i></div>';
+
         const current = weatherData.current;
         const interpretation = WeatherService.getWeatherInterpretation(current.weatherCode);
 
@@ -316,6 +319,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // IA gera o texto original usando o motor NLG (passa as analises tb agora)
         const aiText = meteorGuardAI.generateText(aiInput, prediction.riskScore, prediction.analysis);
+        
+        // Remover spinner e iniciar digitação
+        DOM.riskMessage.innerHTML = '';
         typewriterEffect(DOM.riskMessage, aiText, 18);
 
         // Timestamp
