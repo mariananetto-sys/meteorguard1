@@ -369,7 +369,7 @@ class MeteorGuardAI {
     async initLLM(onProgress) {
         if (this.llmPipeline) return;
         try {
-            const { pipeline, env } = window.Transformers;
+            const { pipeline, env } = window.transformers;
             env.allowLocalModels = false; // Force CDN
 
             this.llmPipeline = await pipeline('text-generation', 'Xenova/LaMini-GPT-124M', {
