@@ -223,6 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     // Main Data Loading
     // -----------------------------------
+    let autoRefreshTimer = null;
+
     async function loadCity(lat, lon, name, country) {
         showLoading(true);
         DOM.searchResults.classList.add('hidden');
@@ -247,6 +249,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Run AI analysis
             runAIAnalysis(weatherData);
+
+            // Auto-refresh silencioso a cada 4 minutos
+            if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+            autoRefreshTimer = setInterval(async () => {
+                try {
+                    console.log('[METEORGUARD] 🔄 Auto-refresh: atualizando dados...');
+                    const freshData = await WeatherService.getWeather(lat, lon);
+                    lastWeatherData = freshData;
+                    updateUI(freshData, name, country);
+                    renderHourlyForecast(freshData.hourly);
+                    checkWeatherAlerts(freshData.current);
+                    runAIAnalysis(freshData);
+                    console.log('[METEORGUARD] ✅ Dados atualizados com sucesso.');
+                } catch (e) {
+                    console.warn('[METEORGUARD] Auto-refresh falhou:', e);
+                }
+            }, 4 * 60 * 1000); // 4 minutos
             
         } catch (error) {
             console.error("Failed to load city data:", error);
