@@ -1004,7 +1004,7 @@ class MeteorGuardAI {
             riskScore,
             percentage,
             level,
-            title: title + confText,
+            title: title,
             icon,
             color,
             analysis,
