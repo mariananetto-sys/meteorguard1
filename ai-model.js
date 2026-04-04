@@ -74,7 +74,7 @@ class MeteorGuardAI {
             units: 8,
             kernelInitializer: 'heNormal'
         }));
-        this.model.add(tf.layers.leakyRelu({ alpha: 0.1 }));
+        this.model.add(tf.layers.leakyReLU({ alpha: 0.1 }));
 
         // Camada de saída (1 neurônio - probabilidade de risco 0 a 1)
         this.model.add(tf.layers.dense({
