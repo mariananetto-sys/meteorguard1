@@ -680,13 +680,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function typewriterEffect(element, text, speed = 30) {
         // Clear previous animation
         if (typewriterTimer) clearInterval(typewriterTimer);
-        element.textContent = '';
+        element.innerHTML = '';
         element.classList.add('typing');
 
         let index = 0;
+        let currentText = '';
         typewriterTimer = setInterval(() => {
-            element.textContent += text.charAt(index);
+            currentText += text.charAt(index);
             index++;
+            
+            // Smart Highlighting: Bolds critical information instantly when the token completes typing
+            let parsed = currentText;
+            parsed = parsed.replace(/(PM2\.5:?\s*[0-9]+(?:\.[0-9]+)?\s*µg\/m³)/ig, '<strong class="neon-text-green">$1</strong>');
+            parsed = parsed.replace(/([0-9]+(?:\.[0-9]+)?\s*(?:%|mm\/h|mm|km\/h|hPa|km|°C))/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
+            parsed = parsed.replace(/(Risco geral: [0-9]+%|NÍVEL CRÍTICO:.*|ALERTA:.*)/ig, '<strong class="neon-text-red">$1</strong>');
+            parsed = parsed.replace(/(Overall risk: [0-9]+%|CRITICAL LEVEL:.*|ALERT:.*)/ig, '<strong class="neon-text-red">$1</strong>');
+            parsed = parsed.replace(/(Riesgo general: [0-9]+%|NIVEL CRÍTICO:.*|ALERTA:.*)/ig, '<strong class="neon-text-red">$1</strong>');
+
+            element.innerHTML = parsed;
+
             if (index >= text.length) {
                 clearInterval(typewriterTimer);
                 typewriterTimer = null;
