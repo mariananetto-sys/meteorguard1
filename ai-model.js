@@ -8,7 +8,7 @@ class MeteorGuardAI {
         this.model = null;
         this.isReady = false;
         this.trainingLog = [];
-        this.modelKey = 'meteorguard-model-v4';
+        this.modelKey = 'meteorguard-model-v1';
         
         // Normalização dos inputs (min/max para cada feature)
         this.featureRanges = {
@@ -23,7 +23,7 @@ class MeteorGuardAI {
             uvIndex:        { min: 0,   max: 12 },
             pm25:           { min: 0,   max: 500 },
             dangerContext:  { min: 0,   max: 3 },
-            stormIndex:     { min: 0,   max: 15000 },
+            stormIndex:     { min: 0,   max: 25000 },
             instability:    { min: 0,   max: 2000 }
         };
     }
@@ -51,6 +51,7 @@ class MeteorGuardAI {
             activation: 'relu',
             kernelInitializer: 'heNormal'
         }));
+        this.model.add(tf.layers.dropout({ rate: 0.1 }));
 
         // 3ª camada oculta (8 neurônios)
         this.model.add(tf.layers.dense({
@@ -58,6 +59,7 @@ class MeteorGuardAI {
             activation: 'relu',
             kernelInitializer: 'heNormal'
         }));
+        this.model.add(tf.layers.dropout({ rate: 0.1 }));
 
         // Camada de saída (1 neurônio - probabilidade de risco 0 a 1)
         this.model.add(tf.layers.dense({
@@ -72,7 +74,7 @@ class MeteorGuardAI {
             metrics: ['mse']
         });
 
-        console.log('[METEORGUARD AI] Arquitetura neural construída: 13→32→16→8→1');
+        console.log('[METEORGUARD AI] Arquitetura neural construída: 13→32→16(D)→8(D)→1');
     }
 
     // ==========================================
@@ -183,6 +185,15 @@ class MeteorGuardAI {
             outputs.push([1.0]); // Classificação pura 100% perigo
         }
 
+        // --- Adição de Ruído Gaussiano para robustez (Generalização) ---
+        for (let i = 0; i < inputs.length; i++) {
+            for (let j = 0; j < inputs[i].length; j++) {
+                // Adiciona ruído de ±1 a 5% dependendo do range da feature
+                const noise = this.rand(-0.02, 0.02) * (inputs[i][j] || 1);
+                inputs[i][j] += noise;
+            }
+        }
+
         return { inputs, outputs };
     }
 
@@ -213,24 +224,31 @@ class MeteorGuardAI {
         const inputs = tf.tensor2d(trainData.inputs.map(row => this.normalizeInput(row)));
         const outputs = tf.tensor2d(trainData.outputs);
 
-        const epochs = 15;
+        const epochs = 50;
         
-        // Early Stopping implementation para prevenir overfitting
-        const callbacks = {
+        // Callbacks do TensorFlow.js
+        const historyCallback = {
             onEpochEnd: (epoch, logs) => {
-                const acc = (logs.accuracy !== undefined) ? logs.accuracy : (logs.acc || 0);
+                const mse = logs.mse || 0;
                 if (onProgress) {
-                    onProgress(epoch + 1, epochs, logs.loss, acc);
+                    onProgress(epoch + 1, epochs, logs.loss, mse);
                 }
             }
         };
+
+        // Early Stopping Real: Para o treinamento se o erro de validação parar de cair
+        const earlyStop = tf.callbacks.earlyStopping({
+            monitor: 'val_loss',
+            patience: 5,
+            minDelta: 0.0001
+        });
 
         await this.model.fit(inputs, outputs, {
             epochs: epochs,
             batchSize: 32,
             validationSplit: 0.2,
             shuffle: true,
-            callbacks: callbacks
+            callbacks: [historyCallback, earlyStop]
         });
 
         // Limpar tensores da memória

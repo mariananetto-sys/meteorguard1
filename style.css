@@ -414,6 +414,7 @@ section {
     line-height: 1;
     background: linear-gradient(to right, var(--text-main), var(--text-muted));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -1159,22 +1160,22 @@ section {
 }
 .daily-forecast-list {
     display: flex;
-    gap: 12px;
+    gap: 16px;
     overflow-x: auto;
-    padding: 15px 5px;
+    padding: 20px 5px;
     scroll-snap-type: x mandatory;
 }
 .forecast-item {
     flex-shrink: 0;
-    min-width: 100px;
-    padding: 16px 14px;
-    border-radius: 14px;
+    min-width: 130px;
+    padding: 24px 20px;
+    border-radius: 18px;
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.06);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     scroll-snap-align: start;
     transition: var(--transition);
     cursor: pointer;
@@ -1186,7 +1187,7 @@ section {
     box-shadow: 0 8px 20px rgba(0, 255, 136, 0.08);
 }
 .forecast-day {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -1198,12 +1199,12 @@ section {
     align-items: baseline;
 }
 .temp-max {
-    font-size: 1.1rem;
+    font-size: 1.4rem;
     font-weight: 800;
     color: var(--text-main);
 }
 .temp-min {
-    font-size: 0.85rem;
+    font-size: 1rem;
     color: var(--text-muted);
 }
 
