@@ -439,9 +439,18 @@ class MeteorGuardAI {
             details.push(ctx.cloudLowDet(data.cloudCover));
         }
 
+        // Filtrar sugestões inconsistentes (Céu nublado != Lindo dia para ar livre)
+        if (data.cloudCover > 85) {
+            suggestions = suggestions.filter(s => 
+                !s.toLowerCase().includes('o ar livre') && 
+                !s.toLowerCase().includes('outdoor') && 
+                !s.toLowerCase().includes('al aire libre')
+            );
+        }
+
         // Se não tem nenhum alerta ou sugestão, gerar mensagem positiva
         if (alerts.length === 0 && suggestions.length === 0) {
-            suggestions.push(ctx.allClearSugg);
+            suggestions.push(this.pick(ctx.allClearSugg));
         }
 
         return { alerts, suggestions, details };
@@ -506,18 +515,33 @@ class MeteorGuardAI {
         
         if (factsToUse.length >= 2) {
             const second = cleanFact(factsToUse[1]);
-            text += ctx.nlgAlso + ' ' + second.charAt(0).toUpperCase() + second.slice(1) + (second.endsWith('.') ? ' ' : '. ');
+            text += ctx.nlgAlso + ' ' + second.charAt(0).toLowerCase() + second.slice(1) + (second.endsWith('.') ? ' ' : '. ');
         }
         
         if (factsToUse.length >= 3) {
             const third = cleanFact(factsToUse[2]);
-            text += ctx.nlgFinally + ' ' + third.charAt(0).toUpperCase() + third.slice(1) + (third.endsWith('.') ? ' ' : '. ');
+            text += ctx.nlgFinally + ' ' + third.charAt(0).toLowerCase() + third.slice(1) + (third.endsWith('.') ? ' ' : '. ');
         }
 
         // Conclusão
         if (riskScore < 0.2) text += ctx.nlgOutroSafe(percentage);
         else if (riskScore < 0.65) text += ctx.nlgOutroWarn(percentage);
         else text += ctx.nlgOutroCrit(percentage);
+
+        // Remover repetições (usar Set) e garantir fluidez
+        const uniqueSentences = new Set();
+        text = text.split('. ')
+            .map(s => s.trim())
+            .filter(s => {
+                const sClean = s.replace(/\.$/, ''); // Tira o ponto no final se tiver para comparar direito
+                if (!sClean) return false;
+                if (uniqueSentences.has(sClean)) return false;
+                uniqueSentences.add(sClean);
+                return true;
+            })
+            .join('. ');
+
+        if (!text.endsWith('.')) text += '.';
 
         return text;
     }
