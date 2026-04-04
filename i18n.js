@@ -30,11 +30,11 @@ const i18n = {
 
             // AI Panel
             aiTitle: 'MeteorGuard IA',
-            aiProcessing: 'PROCESSANDO',
-            aiOnline: 'ONLINE',
-            aiTraining: 'Rede Neural: Treinando 2000 cenários climáticos...',
-            aiEpoch: (e, t) => `Época ${e}/${t} — Inicializando neurônios...`,
-            aiLastAnalysis: 'Última análise neural',
+            aiProcessing: 'ANALISANDO...',
+            aiOnline: 'PRONTO!',
+            aiTraining: 'Assistente: Analisando padrões climáticos históricos...',
+            aiEpoch: (e, t) => `Processando lote ${e}/${t} — Identificando tendências...`,
+            aiLastAnalysis: 'Dados verificados às',
             currentRain: 'Precipitação Atual',
             dailyRain: 'Chuva Acumulada Dia',
 
@@ -196,11 +196,11 @@ const i18n = {
 
             // AI Panel
             aiTitle: 'MeteorGuard AI',
-            aiProcessing: 'PROCESSING',
-            aiOnline: 'ONLINE',
-            aiTraining: 'Neural Network: Training 2000 weather scenarios...',
-            aiEpoch: (e, t) => `Epoch ${e}/${t} — Initializing neurons...`,
-            aiLastAnalysis: 'Latest neural analysis',
+            aiProcessing: 'ANALYZING...',
+            aiOnline: 'READY!',
+            aiTraining: 'Assistant: Analyzing historical weather patterns...',
+            aiEpoch: (e, t) => `Processing batch ${e}/${t} — Identifying trends...`,
+            aiLastAnalysis: 'Data verified at',
             currentRain: 'Current Precipitation',
             dailyRain: 'Daily Accumulated Rain',
 
@@ -353,12 +353,12 @@ const i18n = {
             visibility: 'Visibilidad',
 
             // AI Panel
-            aiTitle: 'MeteorGuard AI',
-            aiProcessing: 'PROCESANDO',
-            aiOnline: 'EN LÍNEA',
-            aiTraining: 'Red Neuronal: Entrenando 2000 escenarios climáticos...',
-            aiEpoch: (e, t) => `Época ${e}/${t} — Inicializando neuronas...`,
-            aiLastAnalysis: 'Último análisis neuronal',
+            aiTitle: 'MeteorGuard IA',
+            aiProcessing: 'ANALIZANDO...',
+            aiOnline: '¡LISTO!',
+            aiTraining: 'Asistente: Analizando patrones de clima históricos...',
+            aiEpoch: (e, t) => `Procesando lote ${e}/${t} — Identificando tendencias...`,
+            aiLastAnalysis: 'Datos verificados a las',
             currentRain: 'Precipitación Actual',
             dailyRain: 'Lluvia Acumulada Día',
 

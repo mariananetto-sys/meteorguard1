@@ -356,7 +356,7 @@ class MeteorGuardAI {
     // ==========================================
     generateDetailedAnalysis(riskScore, data) {
         const alerts = [];
-        const suggestions = [];
+        let suggestions = [];
         const details = [];
 
         // Obter objeto de contexto atual do i18n

@@ -1345,11 +1345,71 @@ section {
     border: 1px solid rgba(255, 51, 102, 0.2);
 }
 
+@media (max-width: 992px) {
+    .top-section {
+        grid-template-columns: 1fr;
+    }
+    .header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .search-container {
+        margin: 0;
+        width: 100%;
+        max-width: unset;
+    }
+}
+
 @media (max-width: 768px) {
     .daily-cards-section { padding: 0 15px 20px; }
     .day-modal-temps { grid-template-columns: repeat(2, 1fr); }
+    .dashboard {
+        padding: 15px 5%;
+        gap: 20px;
+    }
+    .current-weather-main {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    .weather-metrics {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 10px 15px;
+        border-radius: 12px;
+    }
+    .rain-stats {
+        flex-direction: column;
+        display: flex;
+        gap: 15px;
+    }
+    #currentTemp {
+        font-size: 4rem;
+    }
+    .risk-indicator {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+    }
 }
+
 @media (max-width: 600px) {
     .day-modal { padding: 20px; }
     .forecast-item { min-width: 85px; padding: 12px 10px; }
+    .location-header h2 {
+        font-size: 1.6rem;
+    }
+    section {
+        gap: 20px;
+    }
+    .panel {
+        padding: 18px;
+    }
 }
