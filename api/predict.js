@@ -67,20 +67,20 @@ export default function handler(req, res) {
 
     if (percentage > 85) {
         riskLevel = "critical";
-        riskTitle = `🔴 NÍVEL CRÍTICO — Risco ${percentage}%`;
-        interpretationText = `ALERTA MÁXIMO: Níveis críticos e agressivos de instabilidade identificados. (PM2.5: ${pm25} µg/m³). Risco altíssimo para locomoção e vida. Evite áreas de risco e busque abrigo.`;
+        riskTitle = `🚨 Tempo Extremo — Busque Abrigo`;
+        interpretationText = `ALERTA: Níveis críticos de instabilidade identificados. (PM2.5: ${pm25} µg/m³). Condições extremamente perigosas. Evite áreas de risco e busque abrigo.`;
     } else if (percentage > 50) {
         riskLevel = "danger";
-        riskTitle = `🟠 PERIGO — Risco ${percentage}%`;
-        interpretationText = `Condições climáticas severas e prejudiciais detectadas pela engenharia de dados. Nível de poluentes (PM2.5: ${pm25} µg/m³). Fique em segurança e acompanhe o radar.`;
+        riskTitle = `🔴 Condições Severas — Evite Exposição`;
+        interpretationText = `Condições climáticas severas detectadas. Nível de poluentes (PM2.5: ${pm25} µg/m³). Fique em segurança e acompanhe o radar.`;
     } else if (percentage > 25) {
         riskLevel = "warning";
-        riskTitle = `🟡 ATENÇÃO LEVE — Risco ${percentage}%`;
+        riskTitle = `🟡 Leve Instabilidade — Fique Atento`;
         interpretationText = `Existem leves indícios de instabilidade (vento, chuva ou níveis térmicos). Ar registrado em (PM2.5: ${pm25} µg/m³). Tenha precaução em atividades ao ar livre.`;
     } else {
         riskLevel = "safe";
-        riskTitle = `🟢 SEGURO — Risco ${percentage}%`;
-        interpretationText = `Condições climáticas favoráveis no momento. Ar limpo e saudável (PM2.5: ${pm25} µg/m³). Além disso, condições perfeitamente estáveis. Risco geral: ${percentage}%. Aproveite o dia!`;
+        riskTitle = `🟢 Clima Estável — Condições Favoráveis`;
+        interpretationText = `Condições climáticas favoráveis no momento. Ar limpo e saudável (PM2.5: ${pm25} µg/m³). Clima estável. Aproveite o dia!`;
     }
     
     const finalNlgString = `${riskTitle}\n${interpretationText}`;

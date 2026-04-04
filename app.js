@@ -693,9 +693,9 @@ document.addEventListener('DOMContentLoaded', () => {
             let parsed = currentText;
             parsed = parsed.replace(/(PM2\.5:?\s*[0-9]+(?:\.[0-9]+)?\s*µg\/m³)/ig, '<strong class="neon-text-green">$1</strong>');
             parsed = parsed.replace(/([0-9]+(?:\.[0-9]+)?\s*(?:%|mm\/h|mm|km\/h|hPa|km|°C))/g, '<strong style="color:var(--text-main); font-weight:800;">$1</strong>');
-            parsed = parsed.replace(/(Risco geral: [0-9]+%|NÍVEL CRÍTICO:.*|ALERTA:.*)/ig, '<strong class="neon-text-red">$1</strong>');
-            parsed = parsed.replace(/(Overall risk: [0-9]+%|CRITICAL LEVEL:.*|ALERT:.*)/ig, '<strong class="neon-text-red">$1</strong>');
-            parsed = parsed.replace(/(Riesgo general: [0-9]+%|NIVEL CRÍTICO:.*|ALERTA:.*)/ig, '<strong class="neon-text-red">$1</strong>');
+            parsed = parsed.replace(/(ALERTA:.*|Condições críticas.*)/ig, '<strong class="neon-text-red">$1</strong>');
+            parsed = parsed.replace(/(ALERT:.*|Critical conditions.*)/ig, '<strong class="neon-text-red">$1</strong>');
+            parsed = parsed.replace(/(ALERTA:.*|Condiciones críticas.*)/ig, '<strong class="neon-text-red">$1</strong>');
 
             element.innerHTML = parsed;
 

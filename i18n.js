@@ -165,9 +165,9 @@ const i18n = {
                 nlgIntroCrit: 'ALERTA: condições climáticas perigosas na região.',
                 nlgAlso: 'Além disso,',
                 nlgFinally: 'Para completar,',
-                nlgOutroSafe: (v) => `Risco geral: ${v}%. Clima estável no momento.`,
-                nlgOutroWarn: (v) => `Risco geral: ${v}%. Fique atento e tome precauções.`,
-                nlgOutroCrit: (v) => `NÍVEL CRÍTICO: ${v}% de risco. Procure abrigo e evite sair.`
+                nlgOutroSafe: (v) => `Clima estável no momento. Aproveite o dia!`,
+                nlgOutroWarn: (v) => `Fique atento às mudanças e tome precauções.`,
+                nlgOutroCrit: (v) => `ALERTA: Condições críticas detectadas. Procure abrigo e evite sair.`
             },
 
             // Error
@@ -324,9 +324,9 @@ const i18n = {
                 nlgIntroCrit: 'ALERT: dangerous weather conditions in the area.',
                 nlgAlso: 'Additionally,',
                 nlgFinally: 'Furthermore,',
-                nlgOutroSafe: (v) => `Overall risk: ${v}%. Stable weather right now.`,
-                nlgOutroWarn: (v) => `Overall risk: ${v}%. Stay alert and take precautions.`,
-                nlgOutroCrit: (v) => `CRITICAL LEVEL: ${v}% risk. Seek shelter and avoid going out.`
+                nlgOutroSafe: (v) => `Stable weather conditions right now. Enjoy your day!`,
+                nlgOutroWarn: (v) => `Stay alert to weather changes and take precautions.`,
+                nlgOutroCrit: (v) => `ALERT: Critical conditions detected. Seek shelter and avoid going out.`
             },
 
             apiError: 'Failed to connect to weather satellites. Try again.',
@@ -482,9 +482,9 @@ const i18n = {
                 nlgIntroCrit: 'ALERTA: condiciones climáticas peligrosas en la zona.',
                 nlgAlso: 'Además,',
                 nlgFinally: 'Para completar,',
-                nlgOutroSafe: (v) => `Riesgo general: ${v}%. Clima estable en este momento.`,
-                nlgOutroWarn: (v) => `Riesgo general: ${v}%. Mantente atento y toma precauciones.`,
-                nlgOutroCrit: (v) => `NIVEL CRÍTICO: ${v}% de riesgo. Busca refugio y evita salir.`
+                nlgOutroSafe: (v) => `Clima estable en este momento. ¡Disfruta el día!`,
+                nlgOutroWarn: (v) => `Manténte atento a los cambios y toma precauciones.`,
+                nlgOutroCrit: (v) => `ALERTA: Condiciones críticas detectadas. Busca refugio y evita salir.`
             },
 
             apiError: 'Error al conectar con satélites meteorológicos. Inténtalo de nuevo.',

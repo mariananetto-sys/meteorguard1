@@ -347,27 +347,27 @@ class MeteorGuardAI {
 
         if (riskScore < 0.2) {
             level = 'safe';
-            title = langObj && langObj.aiRiskTitleSafe ? langObj.aiRiskTitleSafe(percentage) : `🟢 SEGURO — Risco ${percentage}%`;
+            title = '🟢 Clima Estável — Condições Favoráveis';
             icon = 'fa-shield-check';
             color = '#00ff88';
         } else if (riskScore < 0.4) {
             level = 'low-warning';
-            title = langObj && langObj.aiRiskTitleWarningLow ? langObj.aiRiskTitleWarningLow(percentage) : `🟡 ATENÇÃO LEVE — Risco ${percentage}%`;
+            title = '🟡 Leve Instabilidade — Fique Atento';
             icon = 'fa-umbrella';
             color = '#ffdf00';
         } else if (riskScore < 0.65) {
             level = 'warning';
-            title = langObj && langObj.aiRiskTitleWarning ? langObj.aiRiskTitleWarning(percentage) : `🟠 ATENÇÃO — Risco ${percentage}%`;
+            title = '🟠 Tempo Instável — Precaução Recomendada';
             icon = 'fa-circle-exclamation';
             color = '#ff8800';
         } else if (riskScore < 0.85) {
             level = 'danger';
-            title = langObj && langObj.aiRiskTitleDanger ? langObj.aiRiskTitleDanger(percentage) : `🔴 PERIGO — Risco ${percentage}%`;
+            title = '🔴 Condições Severas — Evite Exposição';
             icon = 'fa-triangle-exclamation';
             color = '#ff3366';
         } else {
             level = 'critical';
-            title = langObj && langObj.aiRiskTitleCritical ? langObj.aiRiskTitleCritical(percentage) : `🚨 RISCO EXTREMO — Risco ${percentage}%`;
+            title = '🚨 Tempo Extremo — Busque Abrigo';
             icon = 'fa-skull-crossbones';
             color = '#ff0040';
         }
