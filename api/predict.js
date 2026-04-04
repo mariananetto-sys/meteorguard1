@@ -92,22 +92,23 @@ function generateNLG(percentage, safeData) {
     let riskTitle = "";
     let interpretationText = "";
 
+    const rainStr = `(Chuva Estimada: ${safeData.precipitation.toFixed(1)}mm)`;
     if (percentage > 85) {
         riskLevel = "critical";
         riskTitle = `🚨 Tempo Extremo — Busque Abrigo`;
-        interpretationText = `ALERTA: Níveis críticos de instabilidade identificados. (PM2.5: ${safeData.pm25} µg/m³). Condições extremamente perigosas. Evite áreas de risco e busque abrigo.`;
+        interpretationText = `ALERTA: Níveis críticos de instabilidade identificados ${rainStr}. (PM2.5: ${safeData.pm25} µg/m³). Condições extremamente perigosas. Evite áreas de risco e busque abrigo.`;
     } else if (percentage > 50) {
         riskLevel = "danger";
         riskTitle = `🔴 Condições Severas — Evite Exposição`;
-        interpretationText = `Condições climáticas severas detectadas. Nível de poluentes (PM2.5: ${safeData.pm25} µg/m³). Fique em segurança e acompanhe o radar.`;
+        interpretationText = `Condições climáticas severas detectadas ${rainStr}. Nível de poluentes (PM2.5: ${safeData.pm25} µg/m³). Fique em segurança e acompanhe o radar.`;
     } else if (percentage > 25) {
         riskLevel = "warning";
         riskTitle = `🟡 Leve Instabilidade — Fique Atento`;
-        interpretationText = `Existem leves indícios de instabilidade (vento, chuva ou níveis térmicos). Ar registrado em (PM2.5: ${safeData.pm25} µg/m³). Tenha precaução em atividades ao ar livre.`;
+        interpretationText = `Existem leves indícios de instabilidade como vento forte ou ${rainStr}. Ar registrado em (PM2.5: ${safeData.pm25} µg/m³). Tenha precaução em atividades ao ar livre.`;
     } else {
         riskLevel = "safe";
         riskTitle = `🟢 Clima Estável — Condições Favoráveis`;
-        interpretationText = `Condições climáticas favoráveis no momento. Ar limpo e saudável (PM2.5: ${safeData.pm25} µg/m³). Clima estável. Aproveite o dia!`;
+        interpretationText = `Condições climáticas favoráveis no momento ${rainStr}. Ar limpo e saudável (PM2.5: ${safeData.pm25} µg/m³). Clima estável. Aproveite o dia!`;
     }
     
     return {

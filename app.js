@@ -412,8 +412,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="temp-max">${Math.round(dayData.maxTemp)}°</span>
                     <span class="temp-min">${Math.round(dayData.minTemp)}°</span>
                 </div>
-                <span class="badge ${dayData.rainProb > 50 ? 'neon-text-blue' : 'text-muted'}" style="font-size: 0.7rem; margin-top: 5px;">
-                    ${dayData.rainProb}% <i class="fa-solid fa-droplet"></i>
+                <span class="badge ${dayData.rainProb > 50 ? 'neon-text-blue' : 'text-muted'}" style="font-size: 0.7rem; margin-top: 5px; display: flex; flex-direction: column; gap: 2px;">
+                    <span>${dayData.rainProb}% <i class="fa-solid fa-droplet"></i></span>
+                    <span style="font-size: 0.65rem; color: var(--text-muted);">${dayData.rainSum ? dayData.rainSum.toFixed(1) : '0.0'} mm</span>
                 </span>
             `;
             

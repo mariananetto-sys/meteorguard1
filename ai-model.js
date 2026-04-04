@@ -431,16 +431,17 @@ class MeteorGuardAI {
         }
 
         // --- Análise de Chuva ---
+        const rainFixed = data.precipitation ? data.precipitation.toFixed(1) : '0.0';
         if (data.precipitation > 30) {
-            alerts.push(ctx.rainCritAlert(data.precipitation.toFixed(1)));
+            alerts.push(ctx.rainCritAlert(rainFixed));
             suggestions.push(ctx.rainCritSugg);
         } else if (data.precipitation > 10) {
-            alerts.push(ctx.rainHighAlert);
+            alerts.push(ctx.rainHighAlert(rainFixed));
             suggestions.push(ctx.rainHighSugg);
         } else if (data.precipitation > 2) {
-            suggestions.push(ctx.rainModSugg);
+            suggestions.push(ctx.rainModSugg(rainFixed));
         } else if (data.precipitation > 0) {
-            suggestions.push(ctx.rainLowSugg);
+            suggestions.push(ctx.rainLowSugg(rainFixed));
         }
 
         // --- Análise de Pressão Atmosférica ---
