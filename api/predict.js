@@ -161,7 +161,7 @@ export default function handler(req, res) {
 
     // 3. Autenticação Isolada
     // Se não tiver ENV setada na Vercel, o fallback continua rodando para você, mas de forma ciente
-    const SECURE_API_KEY = process.env.API_KEY || "mg_key_teste_12345";
+    const SECURE_API_KEY = process.env.API_KEY || "pessoadeelneuroniobatata";
     const userApiKey = req.headers['x-api-key'];
 
     if (!userApiKey || userApiKey !== SECURE_API_KEY) {
