@@ -739,7 +739,7 @@ class MeteorGuardAI {
         // v4.0 MAX: Anomaly penalty
         if (anomalyScore > 0.7) {
             finalRisk = Math.min(1.0, finalRisk + 0.1); // Boost risk for OOD inputs
-            momentumExplanation += ' ⚠ Unusual atmospheric pattern detected.';
+            momentumExplanation += ' ' + i18n.t('aiAnomalyDetected');
         }
         
         finalRisk = Math.min(1.0, Math.max(0.0, finalRisk));
@@ -787,37 +787,37 @@ class MeteorGuardAI {
         // v4.0 MAX: Barometric tendency (critical for storm prediction)
         if (deltaP < -1.5) {
             adjustment += Math.min(0.25, Math.abs(deltaP) * 0.08);
-            explanation += ` ⬇ Rapid pressure drop (${deltaP.toFixed(1)} hPa) indicates approaching instability.`;
+            explanation += ' ' + i18n.t('aiMomentumPressDrop')(deltaP.toFixed(1));
         } else if (deltaP < -0.5) {
             adjustment += 0.08;
-            explanation += ` ⬇ Pressure declining, weather deteriorating.`;
+            explanation += ' ' + i18n.t('aiMomentumPressDown');
         } else if (deltaP > 1.5) {
             adjustment -= Math.min(0.15, deltaP * 0.05);
-            explanation += ` ⬆ Pressure rising, conditions stabilizing.`;
+            explanation += ' ' + i18n.t('aiMomentumPressUp');
         }
         
         // v4.0 MAX: Temperature trend (thermal advection)
         if (Math.abs(deltaT) > 4) {
             adjustment += 0.06;
-            explanation += ` 🌡 Rapid temperature change (${deltaT > 0 ? '+' : ''}${deltaT.toFixed(1)}°C) suggests frontal passage.`;
+            explanation += ' ' + i18n.t('aiMomentumTempDelta')((deltaT > 0 ? '+' : '') + deltaT.toFixed(1));
         }
         
         // v4.0 MAX: Wind acceleration (momentum indicator)
         if (deltaW > 10) {
             adjustment += Math.min(0.15, deltaW * 0.01);
-            explanation += ` 💨 Wind rapidly increasing (+${deltaW.toFixed(1)} km/h).`;
+            explanation += ' ' + i18n.t('aiMomentumWindUp')(deltaW.toFixed(1));
         }
         
         // v4.0 MAX: Humidity surge (moisture advection)
         if (deltaH > 15 && current.humidity > 75) {
             adjustment += 0.08;
-            explanation += ` 💧 Moisture surge detected.`;
+            explanation += ' ' + i18n.t('aiMomentumMoisture');
         }
         
         // v4.0 MAX: Compound effects (nonlinear amplification)
         if (deltaP < -1.0 && deltaW > 8) {
             adjustment += 0.12;
-            explanation += ` ⚠ Pressure drop + wind acceleration = storm development likely.`;
+            explanation += ' ' + i18n.t('aiMomentumStormLikely');
         }
         
         return { adjustment, explanation };
@@ -870,10 +870,10 @@ class MeteorGuardAI {
     computeFeatureImportance(inputVector, finalRisk) {
         const importance = [];
         const featureNames = [
-            'Temperature', 'Humidity', 'Wind Speed', 'Wind Gusts', 
-            'Precipitation', 'Pressure', 'Cloud Cover', 'Visibility',
-            'UV Index', 'PM2.5', 'Context', 'Storm Index', 
-            'Instability', 'Dewpoint', 'Feels Like', 'Wind Power'
+            i18n.t('featTemperature'), i18n.t('featHumidity'), i18n.t('featWindSpeed'), i18n.t('featWindGusts'), 
+            i18n.t('featPrecipitation'), i18n.t('featPressure'), i18n.t('featCloudCover'), i18n.t('featVisibility'),
+            i18n.t('featUVIndex'), i18n.t('featPM25'), i18n.t('featContext'), i18n.t('featStormIndex'), 
+            i18n.t('featInstability'), i18n.t('featDewpoint'), i18n.t('featFeelsLike'), i18n.t('featWindPower')
         ];
         
         // v4.0 MAX: Gradient-based importance approximation
@@ -1037,7 +1037,7 @@ class MeteorGuardAI {
             // Normalize for display (approximate contribution)
             const sum = topFeatures.reduce((a, b) => a + b.score, 0);
             const share = sum > 0 ? (top.score / sum) * 100 : 0;
-            details.push(`🎯 Primary risk driver: ${top.feature} (contribution: ${share.toFixed(1)}%)`);
+            details.push(i18n.t('aiPrimaryDriver')(top.feature, share.toFixed(1)));
         }
 
         // Temperature analysis
@@ -1087,7 +1087,7 @@ class MeteorGuardAI {
 
         // v4.0 MAX: Uncertainty warning
         if (metadata.uncertainty > 0.15) {
-            details.push(`⚠ Prediction uncertainty is elevated (${(metadata.uncertainty * 100).toFixed(1)}%). Monitor conditions closely.`);
+            details.push(i18n.t('aiUncertaintyHigh')((metadata.uncertainty * 100).toFixed(1)));
         }
 
         // Fallback
