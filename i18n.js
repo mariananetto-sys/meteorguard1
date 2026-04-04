@@ -29,13 +29,13 @@ const i18n = {
             visibility: 'Visibilidade',
 
             // AI Panel
-            aiTitle: 'MeteorGuard v4.1 MAX',
+            aiTitle: 'MeteorGuard v4.2 MAX',
             aiProcessing: 'ANALISANDO...',
             aiOnline: 'PRONTO!',
-            aiTraining: 'Sincronizando Tijuca, Rio e Estados Vizinhos (RJ/SP/MG)...',
+            aiTraining: 'Sincronizando Motor Autónomo v4.2 MAX (RJ/SP/MG)...',
             aiDisclaimer: '<b>Nota:</b> Modelo de classificação de risco por IA. Não simula atmosfera física (ECMWF/GFS). Foco no estado atual.',
             aiEpoch: (e, t) => `Processando lote ${e}/${t} — Identificando tendências...`,
-            aiLastAnalysis: 'Visão Regional v4.1 MAX',
+            aiLastAnalysis: 'Motor Autónomo v4.2 MAX',
             currentRain: 'Precipitação Atual',
             dailyRain: 'Chuva Acumulada Dia',
 
@@ -229,13 +229,13 @@ const i18n = {
             visibility: 'Visibility',
 
             // AI Panel
-            aiTitle: 'MeteorGuard v4.1 MAX',
+            aiTitle: 'MeteorGuard v4.2 MAX',
             aiProcessing: 'ANALYZING...',
-            aiOnline: 'MAX READY!',
-            aiTraining: 'Syncing Tijuca, Rio and Nearby States (RJ/SP/MG)...',
+            aiOnline: 'AUTONOMOUS MAX READY!',
+            aiTraining: 'Syncing Autonomous Engine v4.2 MAX (Regional Context)...',
             aiDisclaimer: '<b>Note:</b> AI risk classification model. Does not simulate physical atmosphere (ECMWF/GFS). Focus on current state.',
             aiEpoch: (e, t) => `Processing batch ${e}/${t} — Identifying trends...`,
-            aiLastAnalysis: 'Data verified at',
+            aiLastAnalysis: 'Autonomous Motor v4.2 MAX',
             currentRain: 'Current Precipitation',
             dailyRain: 'Daily Accumulated Rain',
 
@@ -421,13 +421,13 @@ const i18n = {
             visibility: 'Visibilidad',
 
             // AI Panel
-            aiTitle: 'MeteorGuard v4.1 MAX',
+            aiTitle: 'MeteorGuard v4.2 MAX',
             aiProcessing: 'ANALIZANDO...',
-            aiOnline: '¡MAX LISTO!',
-            aiTraining: 'Sincronizando Tijuca, Rio y Estados Vecinos (RJ/SP/MG)...',
+            aiOnline: '¡MAX AUTÓNOMO LISTO!',
+            aiTraining: 'Sincronizando Motor Autónomo v4.2 MAX...',
             aiDisclaimer: '<b>Nota:</b> Modelo de clasificación de riesgo por IA. No simula atmósfera física (ECMWF/GFS). Enfoque en estado actual.',
             aiEpoch: (e, t) => `Procesando lote ${e}/${t} — Identificando tendencias...`,
-            aiLastAnalysis: 'Visión Regional v4.1 MAX',
+            aiLastAnalysis: 'Motor Autónomo v4.2 MAX',
             currentRain: 'Precipitación Actual',
             dailyRain: 'Lluvia Acumulada Día',
 
