@@ -8,7 +8,7 @@ class MeteorGuardAI {
         this.model = null;
         this.isReady = false;
         this.trainingLog = [];
-        this.modelKey = 'meteorguard-model-v3';
+        this.modelKey = 'meteorguard-model-v4';
         
         // Normalização dos inputs (min/max para cada feature)
         this.featureRanges = {
@@ -65,14 +65,14 @@ class MeteorGuardAI {
             activation: 'sigmoid'
         }));
 
-        // Compilar com BCE (correto para classificação probabilística 0→1)
+        // Compilar com MSE (Correto para saída de riscos de regressão contínua 0→1)
         this.model.compile({
-            optimizer: tf.train.adam(0.001),
-            loss: 'binaryCrossentropy',
-            metrics: ['accuracy']
+            optimizer: tf.train.adam(0.005),
+            loss: 'meanSquaredError',
+            metrics: ['mse']
         });
 
-        console.log('[METEORGUARD AI] Arquitetura neural construída: 11→32→16→8→1');
+        console.log('[METEORGUARD AI] Arquitetura neural construída: 13→32→16→8→1');
     }
 
     // ==========================================
@@ -196,8 +196,8 @@ class MeteorGuardAI {
             this.model = savedModel;
             this.model.compile({
                 optimizer: tf.train.adam(0.005),
-                loss: 'binaryCrossentropy',
-                metrics: ['accuracy']
+                loss: 'meanSquaredError',
+                metrics: ['mse']
             });
             this.isReady = true;
             console.log('[METEORGUARD AI] ⚡ Modelo carregado do cache! Treinamento pulado.');
@@ -288,7 +288,10 @@ class MeteorGuardAI {
         const tensor = tf.tensor2d([normalized]);
         const predTensor = this.model.predict(tensor);
         const riskData = await predTensor.data();
-        const riskScore = riskData[0];
+        const rawRisk = riskData[0];
+        
+        // Calibração de Risco: ajusta a sensibilidade assintótica p/ melhorar a IA em cenários moderados 
+        const riskScore = Math.min(1.0, Math.max(0.0, Math.pow(rawRisk, 1.2)));
         
         tensor.dispose();
         predTensor.dispose();
