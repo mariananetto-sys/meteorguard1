@@ -355,11 +355,7 @@
     <script src="services.js"></script>
     <script src="ai-model.js"></script>
     <script src="app.js"></script>
-    <script type="module">
-        import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
-        window.transformers = { pipeline, env };
-        console.log("[METEORGUARD] Transformers.js Modular Engine Loaded.");
-    </script>
+    <!-- v8.1: Transformers.js removed for extreme stability and real-analysis focus. -->
 
     <!-- MeteorChat: Mini-Intelligence Interface -->
     <div id="meteorChatTrigger" class="chat-trigger fade-in delay-3">
@@ -374,21 +370,12 @@
                 <span>MeteorChat AI</span>
             </div>
             <div class="chat-header-actions">
-                <button id="aiModelToggle" class="ai-toggle-btn" title="Alternar IA Local (Real)">
-                    <i class="fa-solid fa-bolt"></i>
-                </button>
                 <button id="closeChat"><i class="fa-solid fa-xmark"></i></button>
             </div>
         </div>
         
         <!-- Model Download Progress -->
-        <div id="llmLoader" class="llm-loader hidden">
-            <div class="llm-loader-header">
-                <span id="llmStatus">Baixando Cérebro Local...</span>
-                <span id="llmPercent">0%</span>
-            </div>
-            <div class="llm-progress"><div id="llmProgressFill" class="llm-progress-fill"></div></div>
-        </div>
+        <!-- v8.1: llmLoader removed -->
 
         <div id="chatMessages" class="chat-messages">
             <div class="message ai-message">

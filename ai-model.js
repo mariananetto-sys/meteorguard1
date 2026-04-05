@@ -480,99 +480,75 @@ class MeteorGuardAI {
         }
     }
 
-    async runLLM(query, data) {
-        const q = query.toLowerCase().trim();
+    /**
+     * MeteorGuard AI v8.1: Chat de Precisão Física (Sem LLM)
+     * Respostas baseadas em sensores reais e contexto de localização.
+     */
+    async askAI(query, data) {
+        query = query.toLowerCase().trim();
+        const q = query;
         
-        // 1. Respostas Rápidas (Economia de Processamento e Zero Erros)
+        // 1. Respostas Rápidas (Saudações)
         if (q === 'oi' || q === 'olá' || q === 'ola') {
             return "Olá! Sou o MeteorGuard AI. Como posso te ajudar com o clima agora?";
         }
         if (q === 'tudo bem' || q === 'tudo bem?' || q === 'como vai?') {
-            return "Tudo ótimo por aqui no monitoramento! E com você? Quer saber algo sobre o tempo?";
+            return "Tudo ótimo por aqui no monitoramento! E com você? Quer saber algo sobre o tempo ou planejar uma saída?";
         }
 
-        // Fallbacks base
-        const cityName = data.name || 'sua localização';
-        const temp = data.temperature !== undefined ? Math.round(data.temperature) : '20';
-        const rain = data.precipitation !== undefined ? data.precipitation.toFixed(1) : '0';
-        const riskLevel = this.getRiskTitle(this.computePhysicsLabel([
-            data.temperature || 20, 0.5, 0, 0, 0, 1013, 0, 20000, 0, 10
-        ]));
+        // 2. Análise de Risco Real (Motor v5.0)
+        const prediction = await this.predict(data);
+        const risk = prediction.riskScore;
+        const type = data.type || 'PPL'; // Tipo do local (BECH, PARK, etc)
+        const isBeach = type === 'BECH' || q.includes('praia') || q.includes('mar');
+        const isPark = type === 'PARK' || q.includes('parque');
 
-        // PROMPT 100% BRASILEIRO (Sem misturar inglês p/ não confundir o modelo de 124M)
-        const prompt = `Instrução: Você é o MeteorGuard AI, assistente brasileiro. Responda de forma curta e gentil.
-Local: ${cityName}
-Clima Atual: ${temp}°C, Chuva ${rain}mm, Risco ${riskLevel}
-
-Pergunta: ${query}
-Resposta em Português:`;
-
-        try {
-            const out = await this.llmPipeline(prompt, {
-                max_new_tokens: 40,
-                temperature: 0.01, // Estabilização máxima
-                repetition_penalty: 1.2,
-                do_sample: false, // Determinístico: acaba com a "criatividade" errada
-            });
-            
-            let response = out[0].generated_text;
-            
-            // Limpeza de rastro de prompt
-            if (response.includes('Resposta em Português:')) {
-                response = response.split('Resposta em Português:')[1];
-            }
-            
-            response = response.trim();
-
-            // SENSOR DE SANIDADE v6.1 (Detecta inglês, moedas e lixo de treinamento)
-            const hasEnglish = /\b(the|is|not|provided|information|text|does|have|available)\b/i.test(response);
-            const hasMoedas = /[$€£]|USD|EUR|GBP/.test(response);
-            const isCrazy = hasEnglish || hasMoedas || response.length < 3 || /[{}]/.test(response);
-            
-            if (isCrazy) {
-                // Fallback inteligente (A resposta parece real mas é hardcoded com dados reais)
-                const weatherContext = `${temp}°C e risco ${riskLevel.toLowerCase()}`;
-                const fallbacks = [
-                    `Atualmente em ${cityName} temos ${weatherContext}.`,
-                    `Os sensores indicam ${weatherContext} para ${cityName}.`,
-                    `O clima em ${cityName} está com ${weatherContext}. Como posso ajudar mais?`
-                ];
-                return fallbacks[Math.floor(Math.random() * fallbacks.length)];
-            }
-
-            return response;
-        } catch (e) {
-            console.error("AI Local Error:", e);
-            return `Tive um erro no processamento local, mas os sensores marcam ${temp}°C em ${cityName}.`;
-        }
-    }
-
-    askLightAI(query, data) {
-        query = query.toLowerCase();
-        const risk = this.computePhysicsLabel([data.temperature, data.humidity, data.windSpeed, data.windGusts, data.precipitation, data.pressureMsl, 0, 20000, 0, 10]);
+        // 3. Lógica de Resposta por Contexto
         
-        if (query.includes("chuva") || query.includes("chuver") || query.includes("molhar")) {
-            if (data.precipitation > 5) return "Já está chovendo ou prestes a começar. Melhor levar o guarda-chuva ou esperar passar.";
-            if (data.precipitation > 0) return "Tem uma chuva leve na área. Nada preocupante, mas não esqueça a capa se for ficar muito tempo fora.";
-            return "Pelas minhas leituras atuais, não tem sinal de chuva nas próximas horas.";
+        // CHUVA
+        if (q.includes("chuva") || q.includes("chuver") || q.includes("molhar") || q.includes("chover")) {
+            if (data.precipitation > 20) return `Cuidado! Temos chuva torrencial (${data.precipitation.toFixed(1)}mm/h) agora. Risco de alagamento significativo.`;
+            if (data.precipitation > 5) return `Sim, está chovendo com intensidade moderada (${data.precipitation.toFixed(1)}mm/h). Melhor se abrigar.`;
+            if (data.precipitation > 0) return `Tem uma garoa leve acontecendo. Nada grave, mas o chão está molhado.`;
+            return "Não há registro de chuva nos sensores para este local no momento. O céu pode estar nublado, mas está seco.";
         }
         
-        if (query.includes("sair") || query.includes("lazer") || query.includes("bom dia")) {
-            if (risk > 0.6) return "Eu diria que não é o melhor momento. O tempo está instável e pode piorar rápido.";
-            if (risk > 0.35) return "Dá pra sair sim, mas fica de olho. Tem algumas variações no clima que pedem atenção.";
-            return "Com certeza! O dia está excelente e seguro para qualquer atividade fora de casa.";
+        // SAIR / LAZER / PRAIA
+        if (q.includes("sair") || q.includes("lazer") || q.includes("passear") || q.includes("bom") || q.includes("pode") || q.includes("da para")) {
+            if (risk > 0.6) {
+                let msg = "Eu não recomendo sair agora. ";
+                if (isBeach) msg = "Péssima ideia ir à praia agora. ";
+                return msg + `O risco está em nível ${prediction.level === 'critical' ? 'CRÍTICO' : 'ALTO'} devido a ${prediction.topFactors[0].factor.toLowerCase()}.`;
+            }
+            if (risk > 0.35) {
+                let msg = "Dá para sair, mas com cautela. ";
+                if (isBeach) msg = "A praia está aceitável, mas o vento ou as nuvens pedem atenção. ";
+                return msg + `O principal fator de atenção hoje é ${prediction.topFactors[0].factor.toLowerCase()}.`;
+            }
+            
+            let finalMsg = "O dia está excelente! Perfeito para qualquer atividade externa.";
+            if (isBeach) finalMsg = "Dia perfeito para um banho de mar! Aproveite o sol e a segurança.";
+            if (isPark) finalMsg = "Ótimo momento para um passeio no parque ou caminhada.";
+            return finalMsg;
         }
 
-        if (query.includes("perigoso") || query.includes("seguro") || query.includes("risco")) {
-            if (risk > 0.7) return `No momento há risco elevado. O perigo maior vem de ventos e instabilidade.`;
-            return "Fica tranquilo, o nível de risco está bem baixo nas condições atuais.";
+        // PERIGO / SEGURANÇA
+        if (q.includes("perigo") || q.includes("seguro") || q.includes("risco") || q.includes("ruim")) {
+            if (risk > 0.7) return `Nível de perigo elevado! Detectamos ${prediction.topFactors[0].factor} como ameaça principal.`;
+            return "As condições estão seguras. Monitoramento não detectou nenhum risco meteorológico relevante no momento.";
         }
 
-        if (query.includes("quem é você") || query.includes("voce") || query.includes("nome")) {
-            return "Eu sou o MeteorGuard AI, seu assistente pessoal de clima e segurança.";
+        // DETALHES TÉCNICOS
+        if (q.includes("temperatura") || q.includes("calor") || q.includes("frio")) {
+            return `A temperatura agora é de ${Math.round(data.temperature)}°C, com sensação de ${Math.round(data.feelsLike || data.temperature)}°C.`;
         }
 
-        return "Hum, não entendi muito bem. Tenta perguntar sobre chuva, se dá pra sair ou sobre os riscos agora.";
+        if (q.includes("quem é você") || q.includes("voce") || q.includes("nome")) {
+            return "Eu sou o MeteorGuard AI, seu assistente de clima baseado em análise física e segurança de dados.";
+        }
+
+        // Fallback: Análise Geral
+        return `Analisando os sensores: O risco total é ${Math.round(risk * 100)}%. O fator mais importante agora é ${prediction.topFactors[0].factor.toLowerCase()}.`;
     }
 
     getRiskLevel(risk) { if (risk > 0.8) return 'critical'; if (risk > 0.6) return 'danger'; if (risk > 0.35) return 'warning'; return 'safe'; }

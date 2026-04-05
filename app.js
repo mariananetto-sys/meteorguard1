@@ -257,13 +257,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     let autoRefreshTimer = null;
 
-    async function loadCity(lat, lon, name, country) {
+    async function loadCity(lat, lon, name, country, type = 'PPL') {
         showLoading(true);
         DOM.searchResults.classList.add('hidden');
         DOM.searchInput.value = '';
         
         // Save city info for favorites
-        currentCityInfo = { lat, lon, name, country };
+        currentCityInfo = { lat, lon, name, country, type };
         
         try {
             resetAnimations();
@@ -580,18 +580,30 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const typeIcons = {
+            'BECH': 'fa-umbrella-beach',
+            'PARK': 'fa-tree',
+            'MNMT': 'fa-landmark',
+            'RUIN': 'fa-archway',
+            'AMUS': 'fa-carousel',
+            'AIRP': 'fa-plane'
+        };
+
         results.forEach(city => {
             const div = document.createElement('div');
             div.className = 'search-item';
+            const iconClass = typeIcons[city.type] || 'fa-location-dot';
+            
             div.innerHTML = `
+                <i class="fa-solid ${iconClass}" style="opacity: 0.6; margin-right: 8px;"></i>
                 <strong>${city.name}</strong> 
-                <span class="text-muted" style="font-size: 0.9em;">
+                <span class="text-muted" style="font-size: 0.85em;">
                     ${city.admin1 ? city.admin1 + ', ' : ''}${city.country}
                 </span>
             `;
             
             div.addEventListener('click', () => {
-                loadCity(city.lat, city.lon, city.name, city.country);
+                loadCity(city.lat, city.lon, city.name, city.country, city.type);
             });
             
             DOM.searchResults.appendChild(div);
@@ -1156,14 +1168,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') sendMessage();
         });
 
+        // v8.1: AI Model Toggle removed as LLM is offline.
         if (DOM.aiModelToggle) {
-            DOM.aiModelToggle.addEventListener('click', () => {
-                meteorGuardAI.useLLM = !meteorGuardAI.useLLM;
-                DOM.aiModelToggle.classList.toggle('active', meteorGuardAI.useLLM);
-                
-                const status = meteorGuardAI.useLLM ? "IA Local (Real) Ativada" : "Motor Leve Ativado";
-                appendChatMsg('ai', `Modo alterado: ${status}`);
-            });
+            DOM.aiModelToggle.style.display = 'none';
         }
     }
 
@@ -1180,20 +1187,11 @@ document.addEventListener('DOMContentLoaded', () => {
         appendChatMsg('ai', 'Processando...', thinkingId);
 
         try {
-            // AI Response logic (Hybrid v5.3)
+            // AI Response logic (v8.1 Physical Chat)
             const aiResponse = await meteorGuardAI.askAI(query, { 
                 ...(lastWeatherData?.current || {}), 
-                name: currentCityInfo.name || 'sua localização'
-            }, (p) => {
-                // Progress callback for LLM download
-                if (p.status === 'progress') {
-                    DOM.llmLoader.classList.remove('hidden');
-                    const percent = Math.round(p.progress || 0);
-                    DOM.llmProgressFill.style.width = `${percent}%`;
-                    if (DOM.llmPercent) DOM.llmPercent.textContent = `${percent}%`;
-                } else if (p.status === 'ready') {
-                    DOM.llmLoader.classList.add('hidden');
-                }
+                name: currentCityInfo.name || i18n.t('myLocation'),
+                type: currentCityInfo.type || 'PPL'
             });
 
             // Remove thinking msg and add real response
