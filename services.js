@@ -151,7 +151,8 @@ class GeocodingService {
                 country: city.country,
                 admin1: city.admin1, // State/Province
                 lat: city.latitude,
-                lon: city.longitude
+                lon: city.longitude,
+                type: city.feature_code // BECH, PARK, PPL, etc.
             }));
         } catch (error) {
             console.error("GeocodingService Error:", error);
