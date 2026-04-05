@@ -586,19 +586,34 @@ document.addEventListener('DOMContentLoaded', () => {
             'MNMT': 'fa-landmark',
             'RUIN': 'fa-archway',
             'AMUS': 'fa-carousel',
-            'AIRP': 'fa-plane'
+            'AIRP': 'fa-plane',
+            'CITY': 'fa-city',
+            'PPL': 'fa-building-user',
+            'PPLA': 'fa-city',
+            'PPLC': 'fa-city'
         };
 
         results.forEach(city => {
             const div = document.createElement('div');
             div.className = 'search-item';
-            const iconClass = typeIcons[city.type] || 'fa-location-dot';
             
+            // v8.2: Keyword-based icon detection (fallback for city-centric APIs)
+            const name = city.name.toLowerCase();
+            let iconClass = 'fa-location-dot';
+
+            if (name.includes('praia')) iconClass = 'fa-umbrella-beach';
+            else if (name.includes('parque') || name.includes('park')) iconClass = 'fa-tree';
+            else if (name.includes('museu') || name.includes('palácio') || name.includes('redentor') || name.includes('teatro')) iconClass = 'fa-landmark';
+            else if (name.includes('shopping') || name.includes('mall')) iconClass = 'fa-bag-shopping';
+            else if (name.includes('estádio') || name.includes('arena')) iconClass = 'fa-futbol';
+            else if (city.type && typeIcons[city.type]) iconClass = typeIcons[city.type];
+            else if (city.type && city.type.startsWith('PPL')) iconClass = 'fa-city';
+
             div.innerHTML = `
-                <i class="fa-solid ${iconClass}" style="opacity: 0.6; margin-right: 8px;"></i>
+                <i class="fa-solid ${iconClass}" style="opacity: 0.7; margin-right: 10px; width: 20px; text-align: center; color: var(--neon-blue);"></i>
                 <strong>${city.name}</strong> 
-                <span class="text-muted" style="font-size: 0.85em;">
-                    ${city.admin1 ? city.admin1 + ', ' : ''}${city.country}
+                <span class="text-muted" style="font-size: 0.8em; margin-left: auto;">
+                    ${city.admin1 ? city.admin1 : city.country}
                 </span>
             `;
             

@@ -500,8 +500,11 @@ class MeteorGuardAI {
         const prediction = await this.predict(data);
         const risk = prediction.riskScore;
         const type = data.type || 'PPL'; // Tipo do local (BECH, PARK, etc)
-        const isBeach = type === 'BECH' || q.includes('praia') || q.includes('mar');
-        const isPark = type === 'PARK' || q.includes('parque');
+        const name = (data.name || '').toLowerCase();
+        
+        // v8.2: Keyword-enhanced context detection
+        const isBeach = type === 'BECH' || name.includes('praia') || q.includes('praia') || q.includes('mar');
+        const isPark = type === 'PARK' || name.includes('parque') || name.includes('park') || q.includes('parque');
 
         // 3. Lógica de Resposta por Contexto
         
