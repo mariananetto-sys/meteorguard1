@@ -401,15 +401,17 @@ IMPORTANTE:
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: 'openai/gpt-oss-20b',
+                    model: 'llama-3.1-8b-instant',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.6,
                     max_tokens: 80
                 })
             });
             const result = await response.json();
+            if (result.error) { console.error("Groq API Error:", result.error); }
             if (result.choices && result.choices.length > 0) {
-                return result.choices[0].message.content.trim();
+                const text = result.choices[0].message.content.trim();
+                if (text) return text;
             }
         } catch (e) {
             console.error("Groq API Error:", e);
@@ -458,15 +460,17 @@ Instruções Estritas:
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: 'openai/gpt-oss-20b',
+                    model: 'llama-3.1-8b-instant',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.7,
                     max_tokens: 150
                 })
             });
             const result = await response.json();
+            if (result.error) { console.error("Groq API Error:", result.error); }
             if (result.choices && result.choices.length > 0) {
-                return result.choices[0].message.content.trim();
+                const text = result.choices[0].message.content.trim();
+                if (text) return text;
             }
         } catch (e) {
             console.error("Groq API Error:", e);
