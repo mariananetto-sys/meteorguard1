@@ -413,7 +413,8 @@ IMPORTANTE:
             console.log("[METEORGUARD] Groq response:", result);
             if (result.error) { console.error("Groq API Error:", result.error); }
             if (result.choices && result.choices.length > 0) {
-                const text = result.choices[0].message.content.trim();
+                const content = result.choices[0].message?.content || "";
+                const text = content.trim();
                 console.log("[METEORGUARD] Groq text:", text);
                 if (text) return text;
                 return "ERRO: Api vazia.";
@@ -477,7 +478,8 @@ Instruções Estritas:
             console.log("[METEORCHAT] Groq response:", result);
             if (result.error) { console.error("Groq API Error:", result.error); }
             if (result.choices && result.choices.length > 0) {
-                const text = result.choices[0].message.content.trim();
+                const content = result.choices[0].message?.content || "";
+                const text = content.trim();
                 console.log("[METEORCHAT] Groq text:", text);
                 if (text) return text;
                 return "A API retornou uma mensagem vazia.";
