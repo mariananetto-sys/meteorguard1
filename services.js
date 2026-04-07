@@ -134,26 +134,79 @@ class WeatherService {
  */
 class GeocodingService {
     static async searchCity(query) {
-        if (!query || query.length < 2) return [];
+        if (!query || query.length < 3) return [];
         
-        // Open-Meteo Geocoding API (free, no key)
-        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=pt&format=json`;
+        const openMeteoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=pt&format=json`;
+        const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`;
         
         try {
-            const response = await fetch(url);
-            const data = await response.json();
+            // Chamada Paralela para máxima velocidade sem quebrar o delay original de 500ms
+            const [meteoRes, nomRes] = await Promise.allSettled([
+                fetch(openMeteoUrl).then(res => res.json()),
+                fetch(nominatimUrl, { headers: { 'Accept-Language': 'pt-BR,pt;q=0.9' } }).then(res => res.json())
+            ]);
             
-            if (!data.results) return [];
+            let nominatimResults = [];
+            let meteoResults = [];
+
+            // 1. Processar Nominatim (Foco em Praias, Parques, Pontos Turísticos)
+            if (nomRes.status === 'fulfilled' && Array.isArray(nomRes.value)) {
+                nominatimResults = nomRes.value.map(place => {
+                    const addr = place.address || {};
+                    const name = place.name || addr.park || addr.beach || addr.tourism || addr.road || addr.suburb;
+                    const state = addr.state || addr.region || addr.city || '';
+                    const country = addr.country || '';
+                    
+                    // Conversão de Tipologia do OSM para Neural ID do MeteorGuard
+                    let internalCode = 'POI';
+                    const t = place.type;
+                    const c = place.class;
+                    
+                    if (t === 'beach' || (c === 'natural' && place.display_name.toLowerCase().includes('praia'))) internalCode = 'BECH';
+                    else if (t === 'park' || c === 'leisure' || c === 'park') internalCode = 'PARK';
+                    else if (c === 'tourism' || c === 'historic') internalCode = 'TOUR';
+                    else if (c === 'place' || c === 'boundary') internalCode = 'PPL'; // Tratado como município/cidade
+
+                    return {
+                        id: place.place_id,
+                        name: name || place.display_name.split(',')[0],
+                        country: country,
+                        admin1: state,
+                        lat: parseFloat(place.lat),
+                        lon: parseFloat(place.lon),
+                        type: internalCode,
+                        source: 'nominatim',
+                        raw: place.display_name
+                    };
+                });
+            }
+
+            // 2. Processar Open-Meteo (Foco estrito em Cidades Oficiais/Estados)
+            if (meteoRes.status === 'fulfilled' && meteoRes.value.results) {
+                meteoResults = meteoRes.value.results.map(city => ({
+                    id: city.id,
+                    name: city.name,
+                    country: city.country,
+                    admin1: city.admin1, // State/Province
+                    lat: city.latitude,
+                    lon: city.longitude,
+                    type: city.feature_code || 'PPL',
+                    source: 'open-meteo'
+                }));
+            }
             
-            return data.results.map(city => ({
-                id: city.id,
-                name: city.name,
-                country: city.country,
-                admin1: city.admin1, // State/Province
-                lat: city.latitude,
-                lon: city.longitude,
-                type: city.feature_code // BECH, PARK, PPL, etc.
-            }));
+            // 3. Sistema de Fusão (Prioriza POIs exatos, adiciona cidades, filtra duplicatas)
+            const combined = [...nominatimResults, ...meteoResults];
+            const unique = [];
+            
+            for (const item of combined) {
+                // Detecção de zona morta (impede de renderizar o mesmo bairro de bases de dados diferentes)
+                const isDuplicate = unique.find(u => Math.abs(u.lat - item.lat) < 0.05 && Math.abs(u.lon - item.lon) < 0.05);
+                if (!isDuplicate) unique.push(item);
+                if (unique.length >= 8) break; // Trava o tamanho do Dropdown em até 8 recomendações perfeitas
+            }
+            
+            return unique;
         } catch (error) {
             console.error("GeocodingService Error:", error);
             return [];

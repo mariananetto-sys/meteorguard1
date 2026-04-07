@@ -403,7 +403,7 @@ IMPORTANTE:
                     'X-Title': 'MeteorGuard'
                 },
                 body: JSON.stringify({
-                    model: 'openrouter/free',
+                    model: 'minimax/minimax-m2.5:free',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.6,
                     max_tokens: 80
@@ -468,7 +468,7 @@ Instruções Estritas:
                     'X-Title': 'MeteorGuard'
                 },
                 body: JSON.stringify({
-                    model: 'openrouter/free',
+                    model: 'minimax/minimax-m2.5:free',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.7,
                     max_tokens: 150
