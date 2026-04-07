@@ -384,7 +384,7 @@ class MeteorGuardAI {
         const topF = this.getTopRiskFactors(data, risk).map(f => f.factor).join(', ');
 
         const prompt = `Você é o MeteorGuard AI. Escreva uma análise climática curta e objetiva (1 ou 2 frases) para o alerta da dashboard.
-Dados em tempo real: Temperatura: ${Math.round(data.temperature)}°C, Umidade: ${data.humidity}%, Vento: ${data.windSpeed}km/h, Chuva: ${data.precipitation}mm/h.
+Dados em tempo real: Sensação Térmica: ${Math.round(data.feelsLike || data.temperature)}°C (Termômetro marca ${Math.round(data.temperature)}°C), Umidade: ${data.humidity}%, Vento: ${data.windSpeed}km/h, Chuva: ${data.precipitation}mm/h.
 Risco calculado pelo sistema de sensores: ${Math.round(risk * 100)}%. Fatores de maior atenção detectados pelos sensores locais: ${topF || 'Nenhum'}.
 
 IMPORTANTE: 
@@ -444,7 +444,7 @@ O usuário enviou a seguinte mensagem: "${query}"
 
 Contexto Local do Usuário: ${data.name || 'Localização Desconhecida'} ${isBeach ? '(É uma Praia / Litoral)' : isPark ? '(É um Parque)' : ''}
 Dados Climáticos em tempo real:
-- Temperatura: ${Math.round(data.temperature)}°C (Sensação Térmica: ${Math.round(data.feelsLike || data.temperature)}°C)
+- Sensação Térmica: ${Math.round(data.feelsLike || data.temperature)}°C (Termômetro apontando: ${Math.round(data.temperature)}°C)
 - Umidade: ${data.humidity}% (Não dê atenção excessiva a isso a menos que seja extremo)
 - Vento: ${data.windSpeed} km/h (Rajadas: ${data.windGusts} km/h)
 - Precipitação/Chuva: ${data.precipitation} mm/h
