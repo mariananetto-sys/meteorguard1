@@ -403,7 +403,7 @@ IMPORTANTE:
                     'X-Title': 'MeteorGuard'
                 },
                 body: JSON.stringify({
-                    model: 'meta-llama/llama-3.1-8b-instruct:free',
+                    model: 'openrouter/free',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.6,
                     max_tokens: 80
@@ -467,7 +467,7 @@ Instruções Estritas:
                     'X-Title': 'MeteorGuard'
                 },
                 body: JSON.stringify({
-                    model: 'meta-llama/llama-3.1-8b-instruct:free',
+                    model: 'openrouter/free',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.7,
                     max_tokens: 150
