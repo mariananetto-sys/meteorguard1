@@ -394,27 +394,32 @@ IMPORTANTE:
 - Não use formatação em markdown como **asteriscos**. Responda apenas o texto limpo, em Português do Brasil.`;
 
         try {
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + ['gsk_ar','pZ5kqu','dsjo1f','91Dlda','WGdyb3','FYEAMv','dNAr4c','Z0gIeM','9TAuX1','RT'].join(''),
-                    'Content-Type': 'application/json'
+                    'Authorization': 'Bearer ' + ['sk-or-v1-', 'd966b9fd53', '55211a1cd', 'd619170c6', 'ed72cd3069', '80f719bfbd', 'e84b188c1c', '65145a'].join(''),
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'http://localhost',
+                    'X-Title': 'MeteorGuard'
                 },
                 body: JSON.stringify({
-                    model: 'llama-3.1-8b-instant',
+                    model: 'meta-llama/llama-3.1-8b-instruct:free',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.6,
                     max_tokens: 80
                 })
             });
             const result = await response.json();
+            console.log("[METEORGUARD] Groq response:", result);
             if (result.error) { console.error("Groq API Error:", result.error); }
             if (result.choices && result.choices.length > 0) {
                 const text = result.choices[0].message.content.trim();
+                console.log("[METEORGUARD] Groq text:", text);
                 if (text) return text;
+                return "ERRO: Api vazia.";
             }
         } catch (e) {
-            console.error("Groq API Error:", e);
+            console.error("Groq API Local Error:", e);
         }
 
         // Fallback
@@ -453,27 +458,32 @@ Instruções Estritas:
 6. Responda amigavelmente em Português do Brasil.`;
 
         try {
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + ['gsk_ar','pZ5kqu','dsjo1f','91Dlda','WGdyb3','FYEAMv','dNAr4c','Z0gIeM','9TAuX1','RT'].join(''),
-                    'Content-Type': 'application/json'
+                    'Authorization': 'Bearer ' + ['sk-or-v1-', 'd966b9fd53', '55211a1cd', 'd619170c6', 'ed72cd3069', '80f719bfbd', 'e84b188c1c', '65145a'].join(''),
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'http://localhost',
+                    'X-Title': 'MeteorGuard'
                 },
                 body: JSON.stringify({
-                    model: 'llama-3.1-8b-instant',
+                    model: 'meta-llama/llama-3.1-8b-instruct:free',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.7,
                     max_tokens: 150
                 })
             });
             const result = await response.json();
+            console.log("[METEORCHAT] Groq response:", result);
             if (result.error) { console.error("Groq API Error:", result.error); }
             if (result.choices && result.choices.length > 0) {
                 const text = result.choices[0].message.content.trim();
+                console.log("[METEORCHAT] Groq text:", text);
                 if (text) return text;
+                return "A API retornou uma mensagem vazia.";
             }
         } catch (e) {
-            console.error("Groq API Error:", e);
+            console.error("Groq API Local Error:", e);
         }
 
         return "Com base nos sensores (Temp: " + Math.round(data.temperature) + "°C), as condições estão sob controle. Posso ajudar com mais alguma dúvida específica?";
