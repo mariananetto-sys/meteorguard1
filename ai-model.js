@@ -397,7 +397,7 @@ IMPORTANTE:
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer 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',
+                    'Authorization': 'Bearer YOUR_GROQ_API_KEY_HERE',
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -454,7 +454,7 @@ Instruções Estritas:
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer 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',
+                    'Authorization': 'Bearer YOUR_GROQ_API_KEY_HERE',
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
