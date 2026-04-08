@@ -394,16 +394,13 @@ IMPORTANTE:
 - Não use formatação em markdown como **asteriscos**. Responda apenas o texto limpo, em Português do Brasil.`;
 
         try {
-            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            const response = await fetch('https://mariananetto-meteorguard.hf.space/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + ['sk-or-v1-', 'd966b9fd53', '55211a1cd', 'd619170c6', 'ed72cd3069', '80f719bfbd', 'e84b188c1c', '65145a'].join(''),
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'http://localhost',
-                    'X-Title': 'MeteorGuard'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: 'openrouter/free',
+                    model: 'qwen2.5:0.5b',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.6,
                     max_tokens: 80
@@ -459,16 +456,13 @@ Instruções Estritas:
 6. Responda amigavelmente em Português do Brasil.`;
 
         try {
-            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            const response = await fetch('https://mariananetto-meteorguard.hf.space/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + ['sk-or-v1-', 'd966b9fd53', '55211a1cd', 'd619170c6', 'ed72cd3069', '80f719bfbd', 'e84b188c1c', '65145a'].join(''),
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'http://localhost',
-                    'X-Title': 'MeteorGuard'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: 'openrouter/free',
+                    model: 'qwen2.5:0.5b',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.7,
                     max_tokens: 150

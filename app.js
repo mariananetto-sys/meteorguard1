@@ -628,45 +628,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -----------------------------------
-    // Map Engine (Leaflet + RainViewer Radar)
+    // Map Engine (Windy Premium Engine)
     // -----------------------------------
-    let rainLayer = null;
-    
     function updateMap(lat, lon, currentPrecipitation) {
-        if (currentMap) {
-            currentMap.setView([lat, lon], 7);
-            loadRainRadar();
-            return;
-        }
-
-        currentMap = L.map('map', {
-            zoomControl: false,
-            attributionControl: false
-        }).setView([lat, lon], 7);
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19
-        }).addTo(currentMap);
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) return;
         
-        L.control.zoom({ position: 'bottomright' }).addTo(currentMap);
-        loadRainRadar();
-    }
+        // Determina a camada do Windy (chuva se estiver chovendo, senão vento)
+        const overlay = currentPrecipitation > 1 ? 'rain' : 'wind';
 
-    async function loadRainRadar() {
-        try {
-            const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-            const data = await res.json();
-            const latest = data.radar.past[data.radar.past.length - 1];
-            
-            if (rainLayer) currentMap.removeLayer(rainLayer);
-            
-            rainLayer = L.tileLayer(
-                `https://tilecache.rainviewer.com${latest.path}/256/{z}/{x}/{y}/4/1_1.png`,
-                { opacity: 0.6, zIndex: 10, maxNativeZoom: 7, maxZoom: 19 }
-            ).addTo(currentMap);
-        } catch (e) {
-            console.warn('[METEORGUARD] Radar indisponível, usando fallback');
-        }
+        // O html embutido do poderoso Windy, consumindo zero recursos do cliente
+        mapContainer.innerHTML = `
+            <iframe 
+                width="100%" 
+                height="100%" 
+                src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km%2Fh&zoom=9&overlay=${overlay}&product=ecmwf&level=surface&lat=${lat}&lon=${lon}" 
+                frameborder="0" 
+                title="MeteorGuard Live Radar"
+                style="border-radius: 20px;">
+            </iframe>
+        `;
     }
 
     // -----------------------------------
