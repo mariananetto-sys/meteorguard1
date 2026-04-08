@@ -400,7 +400,7 @@ IMPORTANTE:
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: 'qwen2.5:0.5b',
+                    model: 'llama3.2',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.6,
                     max_tokens: 80
@@ -462,7 +462,7 @@ Instruções Estritas:
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: 'qwen2.5:0.5b',
+                    model: 'llama3.2',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.7,
                     max_tokens: 150
