@@ -385,13 +385,10 @@ class MeteorGuardAI {
 
         const prompt = `Você é o MeteorGuard AI. Escreva uma análise climática curta e objetiva (1 ou 2 frases) para o alerta da dashboard.
 Dados em tempo real: Sensação Térmica: ${Math.round(data.feelsLike || data.temperature)}°C (Termômetro marca ${Math.round(data.temperature)}°C), Umidade: ${data.humidity}%, Vento: ${data.windSpeed}km/h, Chuva: ${data.precipitation}mm/h.
-Risco calculado pelo sistema de sensores: ${Math.round(risk * 100)}%. Fatores de maior atenção detectados pelos sensores locais: ${topF || 'Nenhum'}.
-
-IMPORTANTE: 
-- Baseie os elogios ou alertas térmicos **exclusivamente na Sensação Térmica**.
-- Tabela de Clima: Sensações acima de 29°C = "Abafo / Calor Intenso" (Nunca chame de confortável). Abaixo de 20°C = "Fresco / Frio".
-- Se não houver chuva mas o calor for alto (acima de 29°C), diga que está seguro de tempestades mas alerte sobre o calorão.
-- Responda de forma analítica e direta (1-2 frases). Sem asteriscos no texto.`;
+IMPORTANTE STRICTO: 
+1. Se Sensação Térmica > 29°C: NUNCA use palavras como "Temperatura moderada", "agradável", ou "confortável". Inicie a frase alertando sobre "Clima Quente / Abafo Intenso".
+2. Jamais culpe a "ausência de chuva" como garantia de conforto se estiver estupidamente quente.
+3. Não use marcações especiais. Mantenha em 2 frases curtas, objetivas e em português brasileiro natural.`;
 
         try {
             const response = await fetch('https://mariananetto-meteorguard.hf.space/v1/chat/completions', {
