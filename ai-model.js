@@ -388,10 +388,10 @@ Dados em tempo real: Sensação Térmica: ${Math.round(data.feelsLike || data.te
 Risco calculado pelo sistema de sensores: ${Math.round(risk * 100)}%. Fatores de maior atenção detectados pelos sensores locais: ${topF || 'Nenhum'}.
 
 IMPORTANTE: 
-- Pare de focar na umidade! Faça uma análise equilibrada baseada no Vento, Temperatura e Chuva.
-- Se o risco for baixo (ex: sem chuva, vento fraco), diga de forma positiva que a situação é "Estável", "Segura" ou "Ideal do lado de fora".
-- Se houver calor excessivo ou chuva, avise.
-- Não use formatação em markdown como **asteriscos**. Responda apenas o texto limpo, em Português do Brasil.`;
+- Baseie os elogios ou alertas térmicos **exclusivamente na Sensação Térmica**.
+- Tabela de Clima: Sensações acima de 29°C = "Abafo / Calor Intenso" (Nunca chame de confortável). Abaixo de 20°C = "Fresco / Frio".
+- Se não houver chuva mas o calor for alto (acima de 29°C), diga que está seguro de tempestades mas alerte sobre o calorão.
+- Responda de forma analítica e direta (1-2 frases). Sem asteriscos no texto.`;
 
         try {
             const response = await fetch('https://mariananetto-meteorguard.hf.space/v1/chat/completions', {
