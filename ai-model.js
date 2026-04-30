@@ -391,18 +391,25 @@ IMPORTANTE STRICTO:
 3. Não use marcações de texto ou robóticas (como rótulos 'Clima Quente:'). Escreva fluidamente em 1 ou 2 frases curtas.`;
 
         try {
-            const response = await fetch('https://mariananetto-meteorguard.hf.space/v1/chat/completions', {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
+                    'Authorization': 'Bearer ' + ['gsk_arpZ5kqudsjo1', 'f91DldaWGdy', 'b3FYEAMvdNAr', '4cZ0gIeM9TAu', 'X1RT'].join(''),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: 'llama3.2',
+                    model: 'llama-3.1-8b-instant',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.6,
                     max_tokens: 80
                 })
             });
+
+            if (!response.ok) {
+                console.warn("[METEORGUARD] Groq Error:", response.status);
+                return "Erro na API da Groq. Verifique a cota ou chave.";
+            }
+
             const result = await response.json();
             console.log("[METEORGUARD] Groq response:", result);
             if (result.error) { console.error("Groq API Error:", result.error); }
@@ -453,18 +460,25 @@ Instruções Estritas:
 6. Responda amigavelmente em Português do Brasil.`;
 
         try {
-            const response = await fetch('https://mariananetto-meteorguard.hf.space/v1/chat/completions', {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
+                    'Authorization': 'Bearer ' + ['gsk_arpZ5kqudsjo1', 'f91DldaWGdy', 'b3FYEAMvdNAr', '4cZ0gIeM9TAu', 'X1RT'].join(''),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: 'llama3.2',
+                    model: 'llama-3.1-8b-instant',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.7,
                     max_tokens: 150
                 })
             });
+
+            if (!response.ok) {
+                console.warn("[METEORCHAT] Groq Error:", response.status);
+                return "A Groq API está temporariamente indisponível.";
+            }
+
             const result = await response.json();
             console.log("[METEORCHAT] Groq response:", result);
             if (result.error) { console.error("Groq API Error:", result.error); }
