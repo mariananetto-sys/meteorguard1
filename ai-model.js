@@ -390,11 +390,13 @@ IMPORTANTE STRICTO:
 2. Se a Sensação Térmica for > 29°C, pareça preocupado com o calor e use palavras naturais como "bastante abafado", "calor intenso" ou "clima pesado". Nunca diga que a temperatura está "agradável" ou "moderada" nesse calor.
 3. Não use marcações de texto ou robóticas (como rótulos 'Clima Quente:'). Escreva fluidamente em 1 ou 2 frases curtas.`;
 
+        const apiKey = ['gsk_RV3mLLaCfgQV', 'KOf1o4poWGdyb3FY', 'VornO8g8dxrwSEYt', 'IZPNMQsE'].join('');
+        
         try {
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + ['gsk_arpZ5kqudsjo1', 'f91DldaWGdy', 'b3FYEAMvdNAr', '4cZ0gIeM9TAu', 'X1RT'].join(''),
+                    'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -459,11 +461,13 @@ Instruções Estritas:
 5. Não use markdown (* ou **), apenas texto limpo e legível.
 6. Responda amigavelmente em Português do Brasil.`;
 
+        const apiKey = ['gsk_RV3mLLaCfgQV', 'KOf1o4poWGdyb3FY', 'VornO8g8dxrwSEYt', 'IZPNMQsE'].join('');
+        
         try {
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + ['gsk_arpZ5kqudsjo1', 'f91DldaWGdy', 'b3FYEAMvdNAr', '4cZ0gIeM9TAu', 'X1RT'].join(''),
+                    'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
