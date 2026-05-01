@@ -1187,6 +1187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // AI Response logic (v8.1 Physical Chat)
             const aiResponse = await meteorGuardAI.askAI(query, { 
                 ...(lastWeatherData?.current || {}), 
+                daily: lastWeatherData?.daily || [],
                 name: currentCityInfo.name || i18n.t('myLocation'),
                 type: currentCityInfo.type || 'PPL'
             });

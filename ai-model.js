@@ -442,7 +442,10 @@ IMPORTANTE STRICTO:
         const isBeach = type === 'BECH' || name.includes('praia') || query.includes('praia') || query.includes('mar');
         const isPark = type === 'PARK' || name.includes('parque') || name.includes('park') || query.includes('parque');
 
+        const today = new Date().toLocaleDateString('pt-BR');
+
         const prompt = `Você é o MeteorGuard AI, um assistente meteorológico virtual inteligente, educado e focado na segurança do usuário.
+Data de hoje: ${today}
 O usuário enviou a seguinte mensagem: "${query}"
 
 Contexto Local do Usuário: ${data.name || 'Localização Desconhecida'} ${isBeach ? '(É uma Praia / Litoral)' : isPark ? '(É um Parque)' : ''}
@@ -453,13 +456,22 @@ Dados Climáticos em tempo real:
 - Precipitação/Chuva: ${data.precipitation} mm/h
 - Probabilidade de Risco Meteorológico atual calculada: ${Math.round((data.regionalState || 0) * 100)}%
 
+Previsão para os próximos 14 dias:
+${(data.daily || []).slice(0, 14).map(day => {
+    const d = new Date(day.date + 'T12:00:00');
+    const semana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const diaNome = semana[d.getDay()];
+    return `- ${day.date} (${diaNome}): Máx ${day.maxTemp}°C, Chuva ${day.rainSum}mm (${day.rainProb}%)`;
+}).join('\n')}
+
 Instruções Estritas:
 1. Responda diretamente à pergunta do usuário baseando-se nas métricas e na segurança humana.
 2. Seja incrivelmente útil e claro. Pare de culpar a "umidade" por tudo, fale do cenário global.
 3. Se for uma praia ou parque, aja de acordo e use o contexto de forma natural e amigável.
-4. Seja super conciso (apenas 2 ou 3 frases naturais). Aja como uma inteligência num chat rápido.
-5. Não use markdown (* ou **), apenas texto limpo e legível.
-6. Responda amigavelmente em Português do Brasil.`;
+4. Analise com atenção o dia específico que o usuário pediu (ex: se ele perguntou de 'domingo', localize o domingo na lista de previsão e foque nele).
+5. Seja super conciso (apenas 2 ou 3 frases naturais). Aja como uma inteligência num chat rápido.
+6. Não use markdown (* ou **), apenas texto limpo e legível.
+7. Responda amigavelmente em Português do Brasil.`;
 
         const apiKey = ['gsk_RV3mLLaCfgQV', 'KOf1o4poWGdyb3FY', 'VornO8g8dxrwSEYt', 'IZPNMQsE'].join('');
         
