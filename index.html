@@ -17,8 +17,8 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- Favicon (Meteor Emoji) -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☄️</text></svg>">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23202520'/%3E%3Cpath d='M18 38c7-16 17-22 30-20-9 5-13 13-13 27l-7-10-10 3Z' fill='%232f8f83'/%3E%3Ccircle cx='20' cy='42' r='5' fill='%23f4f1ea'/%3E%3C/svg%3E">
 </head>
 <body>
     <div class="app-container">
@@ -64,13 +64,13 @@
                     </button>
                     <div id="langDropdown" class="lang-dropdown neon-glass hidden">
                         <div class="lang-option" data-lang="pt">
-                            <span>🇧🇷</span> Português
+                            <span>PT</span> Português
                         </div>
                         <div class="lang-option" data-lang="en">
-                            <span>🇺🇸</span> English
+                            <span>EN</span> English
                         </div>
                         <div class="lang-option" data-lang="es">
-                            <span>🇪🇸</span> Español
+                            <span>ES</span> Español
                         </div>
                     </div>
                 </div>
@@ -204,7 +204,7 @@
                     
                     <!-- Risk Indicator -->
                     <div id="riskIndicator" class="risk-indicator safe transition-all">
-                        <div class="risk-icon"><i id="riskIconHtml" class="fa-solid fa-shield-check"></i></div>
+                        <div class="risk-icon"><i id="riskIconHtml" class="fa-solid fa-shield-halved"></i></div>
                         <div class="risk-content">
                             <h4 id="riskLevelTitle" data-i18n="riskSafe">Nível: Seguro</h4>
                             <p id="riskMessage" class="ai-typing"></p>

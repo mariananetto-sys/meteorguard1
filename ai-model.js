@@ -214,7 +214,7 @@ class MeteorGuardAI {
      * v5.0 MAX: Hierarchical Decision Pipeline
      */
     async predict(data) {
-        if (!this.model) return { riskScore: 0.1, level: 'safe', title: '🟢 ANÁLISE...' };
+        if (!this.model) return { riskScore: 0.1, level: 'safe', title: 'ANÁLISE...' };
         
         const humidity = data.humidity || 50, press = data.pressureMsl || 1013, wind = data.windSpeed || 0, temp = data.temperature || 20;
         const lat = data.lat || 0, lon = data.lon || 0;
@@ -320,27 +320,27 @@ class MeteorGuardAI {
     getDominantSignals(data) {
         const signals = { critical: [], severe: [], moderate: [], positive: [], blockers: [] };
 
-        // 🔴 CRÍTICOS
+        // CRITICOS
         if (data.windGusts > 100) signals.critical.push("rajadas destrutivas");
         if (data.precipitation > 40) signals.critical.push("chuva torrencial");
         if (data.pressureMsl < 980) signals.critical.push("pressão extremamente baixa");
 
-        // 🟠 SEVEROS
+        // SEVEROS
         if (data.windSpeed > 50) signals.severe.push("ventos fortes");
         if (data.precipitation > 15) signals.severe.push("chuva intensa");
         if (data.visibility < 2000) signals.severe.push("baixa visibilidade");
 
-        // 🟡 MODERADOS
+        // MODERADOS
         if (data.cloudCover > 85) signals.moderate.push("céu totalmente encoberto");
         if (data.humidity > 85) signals.moderate.push("umidade muito alta");
         if (data.pressureMsl < 1005) signals.moderate.push("queda de pressão");
 
-        // 🟢 POSITIVOS
+        // POSITIVOS
         if (data.visibility > 15000 && data.precipitation === 0 && data.cloudCover < 40) {
             signals.positive.push("condições abertas e estáveis");
         }
 
-        // 🚫 BLOQUEADORES DE FRASES POSITIVAS
+        // BLOQUEADORES DE FRASES POSITIVAS
         if (
             data.cloudCover > 80 ||
             data.visibility < 5000 ||
@@ -564,8 +564,8 @@ Instruções Estritas:
     }
 
     getRiskLevel(risk) { if (risk > 0.8) return 'critical'; if (risk > 0.6) return 'danger'; if (risk > 0.35) return 'warning'; return 'safe'; }
-    getRiskTitle(risk) { if (risk > 0.8) return '🚨 RISCO EXTREMO'; if (risk > 0.6) return '🔴 PERIGO'; if (risk > 0.35) return '🟠 ATENÇÃO'; return '🟢 SEGURO'; }
-    getRiskColor(risk) { if (risk > 0.8) return '#ff0040'; if (risk > 0.6) return '#ff3366'; if (risk > 0.35) return '#ff8800'; return '#00ff88'; }
+    getRiskTitle(risk) { if (risk > 0.8) return 'RISCO EXTREMO'; if (risk > 0.6) return 'PERIGO'; if (risk > 0.35) return 'ATENÇÃO'; return 'SEGURO'; }
+    getRiskColor(risk) { if (risk > 0.8) return '#8f1f18'; if (risk > 0.6) return '#c84a3f'; if (risk > 0.35) return '#b98418'; return '#2f8f83'; }
 }
 
 // Inicialização Global

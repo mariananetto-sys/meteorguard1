@@ -44,11 +44,11 @@ const i18n = {
             riskDanger: 'Risco Alto: Condições Severas',
             riskCritical: 'EMERGÊNCIA: Risco Extremo',
             
-            aiRiskTitleSafe: (v) => `🟢 SEGURO`,
+            aiRiskTitleSafe: (v) => `SEGURO`,
             aiRiskTitleWarningLow: (v) => `🟡 ATENÇÃO LEVE`,
-            aiRiskTitleWarning: (v) => `🟠 ATENÇÃO`,
-            aiRiskTitleDanger: (v) => `🔴 PERIGO`,
-            aiRiskTitleCritical: (v) => `🚨 RISCO EXTREMO`,
+            aiRiskTitleWarning: (v) => `ATENÇÃO`,
+            aiRiskTitleDanger: (v) => `PERIGO`,
+            aiRiskTitleCritical: (v) => `RISCO EXTREMO`,
             physicsUnstable: ' (TENDÊNCIA INSTÁVEL)',
             physicsStable: ' (ESTABILIZANDO)',
 
@@ -87,9 +87,9 @@ const i18n = {
             aiMomentumTempDelta: (v) => `🌡 Mudança térmica rápida (${v}°C) sugere passagem de frente.`,
             aiMomentumWindUp: (v) => `💨 Vento acelerando rápido (+${v} km/h).`,
             aiMomentumMoisture: '💧 Onda de umidade detectada.',
-            aiMomentumStormLikely: '⚠ Pressão em queda + vento acelerando = formação de tempestade provável.',
-            aiAnomalyDetected: '⚠ Padrão atmosférico incomum detectado.',
-            aiUncertaintyHigh: (v) => `⚠ Incerteza elevada (${v}%). Monitore as condições de perto.`,
+            aiMomentumStormLikely: 'Pressão em queda + vento acelerando = formação de tempestade provável.',
+            aiAnomalyDetected: 'Padrão atmosférico incomum detectado.',
+            aiUncertaintyHigh: (v) => `Incerteza elevada (${v}%). Monitore as condições de perto.`,
             alertRain: (v) => `Chuva forte de ${v} mm/h — evite áreas de risco`,
             alertRainCrit: (v) => `Chuva torrencial de ${v} mm/h — risco de alagamento`,
             alertUV: (v) => `UV muito alto (${v}) — use protetor solar`,
@@ -140,7 +140,7 @@ const i18n = {
             tipUV: (v) => `☀️ UV alto (${v}) — use protetor solar`,
             tipUVExtreme: '🔥 UV extremo — evite exposição entre 10h-16h',
             tipStorm: (d) => `⚡ ${d} prevista — risco meteorológico`,
-            tipAllClear: '✅ Sem alertas para este dia. Condições favoráveis!',
+            tipAllClear: 'Sem alertas para este dia. Condições favoráveis!',
 
             // Weather descriptions
             // Weather descriptions
@@ -188,9 +188,9 @@ const i18n = {
                 cloudHighDet: (v) => `☁️ Céu totalmente encoberto (${v}%). Sem aberturas de sol previstas.`,
                 cloudLowDet: (v) => `☀️ Céu predominantemente limpo (${v}% de nuvens).`,
                 allClearSugg: [
-                    '✅ Condições estáveis no momento.',
-                    '✅ Clima sem riscos significativos.',
-                    '✅ Situação meteorológica tranquila.'
+                    'Condições estáveis no momento.',
+                    'Clima sem riscos significativos.',
+                    'Situação meteorológica tranquila.'
                 ],
                 nlgIntroSafe: 'Condições climáticas favoráveis no momento.',
                 nlgIntroWarn: 'Algumas condições merecem atenção.',
@@ -244,11 +244,11 @@ const i18n = {
             riskDanger: 'High Risk: Severe Conditions',
             riskCritical: 'EMERGENCY: Extreme Risk',
             
-            aiRiskTitleSafe: (v) => `🟢 SAFE`,
+            aiRiskTitleSafe: (v) => `SAFE`,
             aiRiskTitleWarningLow: (v) => `🟡 MINOR WARNING`,
-            aiRiskTitleWarning: (v) => `🟠 WARNING`,
-            aiRiskTitleDanger: (v) => `🔴 DANGER`,
-            aiRiskTitleCritical: (v) => `🚨 EXTREME RISK`,
+            aiRiskTitleWarning: (v) => `WARNING`,
+            aiRiskTitleDanger: (v) => `DANGER`,
+            aiRiskTitleCritical: (v) => `EXTREME RISK`,
             physicsUnstable: ' (UNSTABLE TREND)',
             physicsStable: ' (STABILIZING)',
 
@@ -286,9 +286,9 @@ const i18n = {
             aiMomentumTempDelta: (v) => `🌡 Rapid temperature change (${v}°C) suggests front.`,
             aiMomentumWindUp: (v) => `💨 Wind rapidly increasing (+${v} km/h).`,
             aiMomentumMoisture: '💧 Moisture surge detected.',
-            aiMomentumStormLikely: '⚠ Pressure drop + wind acceleration = storm development likely.',
-            aiAnomalyDetected: '⚠ Unusual atmospheric pattern detected.',
-            aiUncertaintyHigh: (v) => `⚠ High uncertainty (${v}%). Monitor closely.`,
+            aiMomentumStormLikely: 'Pressure drop + wind acceleration = storm development likely.',
+            aiAnomalyDetected: 'Unusual atmospheric pattern detected.',
+            aiUncertaintyHigh: (v) => `High uncertainty (${v}%). Monitor closely.`,
             alertRain: (v) => `Heavy rain at ${v} mm/h — avoid risk areas`,
             alertRainCrit: (v) => `Torrential rain at ${v} mm/h — flood risk`,
             alertUV: (v) => `Very high UV (${v}) — use sunscreen`,
@@ -334,7 +334,7 @@ const i18n = {
             tipUV: (v) => `☀️ High UV (${v}) — use sunscreen`,
             tipUVExtreme: '🔥 Extreme UV — avoid exposure between 10am-4pm',
             tipStorm: (d) => `⚡ ${d} forecast — meteorological risk`,
-            tipAllClear: '✅ No alerts for this day. Favorable conditions!',
+            tipAllClear: 'No alerts for this day. Favorable conditions!',
 
             // Weather descriptions
             weather: {
@@ -381,9 +381,9 @@ const i18n = {
                 cloudHighDet: (v) => `☁️ Completely overcast sky (${v}%). No predicted sun breaks.`,
                 cloudLowDet: (v) => `☀️ Mostly clear sky (${v}% clouds).`,
                 allClearSugg: [
-                    '✅ Stable conditions at the moment.',
-                    '✅ Weather without significant risks.',
-                    '✅ Calm meteorological situation.'
+                    'Stable conditions at the moment.',
+                    'Weather without significant risks.',
+                    'Calm meteorological situation.'
                 ],
                 nlgIntroSafe: 'Favorable weather conditions at the moment.',
                 nlgIntroWarn: 'Some conditions require your attention.',
@@ -436,11 +436,11 @@ const i18n = {
             riskDanger: 'Riesgo Alto: Condiciones Severas',
             riskCritical: 'EMERGENCIA: Riesgo Extremo',
             
-            aiRiskTitleSafe: (v) => `🟢 SEGURO`,
+            aiRiskTitleSafe: (v) => `SEGURO`,
             aiRiskTitleWarningLow: (v) => `🟡 ATENCIÓN LEVE`,
-            aiRiskTitleWarning: (v) => `🟠 ATENCIÓN`,
-            aiRiskTitleDanger: (v) => `🔴 PELIGRO`,
-            aiRiskTitleCritical: (v) => `🚨 RIESGO EXTREMO`,
+            aiRiskTitleWarning: (v) => `ATENCIÓN`,
+            aiRiskTitleDanger: (v) => `PELIGRO`,
+            aiRiskTitleCritical: (v) => `RIESGO EXTREMO`,
             physicsUnstable: ' (TENDENCIA INESTABLE)',
             physicsStable: ' (ESTABILIZANDO)',
 
@@ -478,9 +478,9 @@ const i18n = {
             aiMomentumTempDelta: (v) => `🌡 Cambio térmico rápido (${v}°C) sugiere frente.`,
             aiMomentumWindUp: (v) => `💨 Viento acelerando rápido (+${v} km/h).`,
             aiMomentumMoisture: '💧 Oleada de humedad detectada.',
-            aiMomentumStormLikely: '⚠ Caída de presión + viento acelerando = formación de tormenta probable.',
-            aiAnomalyDetected: '⚠ Patrón atmosférico inusual detectado.',
-            aiUncertaintyHigh: (v) => `⚠ Incertidumbre elevada (${v}%). Monitoree de cerca.`,
+            aiMomentumStormLikely: 'Caída de presión + viento acelerando = formación de tormenta probable.',
+            aiAnomalyDetected: 'Patrón atmosférico inusual detectado.',
+            aiUncertaintyHigh: (v) => `Incertidumbre elevada (${v}%). Monitoree de cerca.`,
             alertRain: (v) => `Lluvia fuerte de ${v} mm/h — evite zonas de riesgo`,
             alertRainCrit: (v) => `Lluvia torrencial de ${v} mm/h — riesgo de inundación`,
             alertUV: (v) => `UV muy alto (${v}) — use protector solar`,
@@ -526,7 +526,7 @@ const i18n = {
             tipUV: (v) => `☀️ UV alto (${v}) — usa protector solar`,
             tipUVExtreme: '🔥 UV extremo — evita exposición entre 10h-16h',
             tipStorm: (d) => `⚡ ${d} prevista — riesgo meteorológico`,
-            tipAllClear: '✅ Sin alertas para este día. ¡Condiciones favorables!',
+            tipAllClear: 'Sin alertas para este día. ¡Condiciones favorables!',
 
             // Weather descriptions
             weather: {
@@ -573,9 +573,9 @@ const i18n = {
                 cloudHighDet: (v) => `☁️ Cielo totalmente cubierto (${v}%). No se prevén aperturas de sol.`,
                 cloudLowDet: (v) => `☀️ Cielo mayormente despejado (${v}% de nubes).`,
                 allClearSugg: [
-                    '✅ Condiciones estables en este momento.',
-                    '✅ Clima sin riesgos significativos.',
-                    '✅ Situación meteorológica tranquila.'
+                    'Condiciones estables en este momento.',
+                    'Clima sin riesgos significativos.',
+                    'Situación meteorológica tranquila.'
                 ],
                 nlgIntroSafe: 'Condiciones climáticas favorables en este momento.',
                 nlgIntroWarn: 'Algunas condiciones merecen atención.',

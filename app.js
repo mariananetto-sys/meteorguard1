@@ -148,6 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function bootAI() {
         isAIBooting = true;
         console.log('[METEORGUARD] Initializing AI Risk Engine...');
+
+        if (typeof tf !== 'undefined') {
+            await tf.setBackend('cpu');
+            await tf.ready();
+        }
         
         // Build the model architecture
         meteorGuardAI.buildModel();
@@ -167,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.aiBadge.textContent = i18n.t('aiOnline') || 'PRONTO!';
         DOM.aiBadge.classList.add('active');
 
-        console.log('[METEORGUARD] ✅ AI Neural Model Operational!');
+        console.log('[METEORGUARD] AI Neural Model Operational.');
 
         // If weather data was already loaded, re-run AI analysis
         if (lastWeatherData) {
@@ -293,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderHourlyForecast(freshData.hourly);
                     checkWeatherAlerts(freshData.current);
                     runAIAnalysis(freshData);
-                    console.log('[METEORGUARD] ✅ Dados atualizados com sucesso.');
+                    console.log('[METEORGUARD] Dados atualizados com sucesso.');
                 } catch (e) {
                     console.warn('[METEORGUARD] Auto-refresh falhou:', e);
                 }
@@ -359,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update Trust & Regional Badges (with Anomaly Detection)
         const trustPct = Math.round((prediction.trustWeight || 0.75) * 100);
-        const anomalyAlert = prediction.anomalyScore > 0.6 ? ' ⚠️ ANOMALIA' : '';
+        const anomalyAlert = prediction.anomalyScore > 0.6 ? ' - ANOMALIA' : '';
         DOM.aiTrustBadge.innerHTML = `<i class="fa-solid fa-microchip"></i> Trust: ${trustPct}%${anomalyAlert}`;
         
         const geoContext = currentCityInfo.name ? `${currentCityInfo.name} + Regional Mesh` : 'Ultimate Visual Active';
@@ -367,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update Risk Indicator
         DOM.riskIndicator.className = `risk-indicator ${prediction.level} transition-all`;
-        DOM.riskIcon.className = `fa-solid ${prediction.riskScore > 0.6 ? 'fa-triangle-exclamation' : 'fa-shield-check'}`;
+        DOM.riskIcon.className = `fa-solid ${prediction.riskScore > 0.6 ? 'fa-triangle-exclamation' : 'fa-shield-halved'}`;
         DOM.riskTitle.textContent = prediction.title;
 
         // Render Explainability Layer (from prediction.topFactors)
@@ -677,24 +682,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     {
                         label: 'Máxima °C',
                         data: maxTemps,
-                        borderColor: '#ff3366',
-                        backgroundColor: 'rgba(255, 51, 102, 0.1)',
+                        borderColor: '#c84a3f',
+                        backgroundColor: 'rgba(200, 74, 63, 0.10)',
                         tension: 0.4,
                         borderWidth: 3,
-                        pointBackgroundColor: '#0a0e17',
-                        pointBorderColor: '#ff3366',
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#c84a3f',
                         pointRadius: 4,
                         fill: true
                     },
                     {
                         label: 'Mínima °C',
                         data: minTemps,
-                        borderColor: '#00f0ff',
-                        backgroundColor: 'rgba(0, 240, 255, 0.0)',
+                        borderColor: '#2f8f83',
+                        backgroundColor: 'rgba(47, 143, 131, 0)',
                         tension: 0.4,
                         borderWidth: 2,
-                        pointBackgroundColor: '#0a0e17',
-                        pointBorderColor: '#00f0ff',
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#2f8f83',
                         pointRadius: 3,
                         borderDash: [5, 5]
                     },
@@ -702,7 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         type: 'bar',
                         label: 'Chuva (%)',
                         data: rainProbs,
-                        backgroundColor: 'rgba(176, 38, 255, 0.3)',
+                        backgroundColor: 'rgba(155, 122, 53, 0.28)',
                         borderRadius: 4,
                         yAxisID: 'y1'
                     }
@@ -717,13 +722,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 plugins: {
                     legend: {
-                        labels: { color: '#94a3b8', font: { family: "'Outfit', sans-serif" } }
+                        labels: { color: '#687068', font: { family: "'Outfit', sans-serif" } }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(10, 14, 23, 0.9)',
-                        titleColor: '#fff',
-                        bodyColor: '#94a3b8',
-                        borderColor: 'rgba(255,255,255,0.1)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.96)',
+                        titleColor: '#202520',
+                        bodyColor: '#687068',
+                        borderColor: 'rgba(32,37,32,0.12)',
                         borderWidth: 1,
                         padding: 10,
                         displayColors: true,
@@ -732,17 +737,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 scales: {
                     x: {
-                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                        ticks: { color: '#94a3b8', font: { family: "'Outfit', sans-serif" } }
+                        grid: { color: 'rgba(32,37,32,0.08)', drawBorder: false },
+                        ticks: { color: '#687068', font: { family: "'Outfit', sans-serif" } }
                     },
                     y: {
-                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                        ticks: { color: '#94a3b8', font: { family: "'Outfit', sans-serif" } }
+                        grid: { color: 'rgba(32,37,32,0.08)', drawBorder: false },
+                        ticks: { color: '#687068', font: { family: "'Outfit', sans-serif" } }
                     },
                     y1: {
                         position: 'right',
                         grid: { drawOnChartArea: false },
-                        ticks: { color: '#b026ff', callback: function(value) { return value + '%' } }
+                        ticks: { color: '#9b7a35', callback: function(value) { return value + '%' } }
                     }
                 }
             }
