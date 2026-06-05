@@ -379,6 +379,53 @@ class MeteorGuardAI {
             }));
     }
 
+    buildDeterministicWeatherText(data, risk) {
+        const feels = Math.round(data.feelsLike || data.temperature || 0);
+        const temp = Math.round(data.temperature || feels);
+        const humidity = Math.round(data.humidity || 0);
+        const wind = Number(data.windSpeed || 0).toFixed(1).replace('.0', '');
+        const rain = Number(data.precipitation || 0);
+
+        if (risk < 0.35 && feels < 27 && rain <= 0.5 && data.windSpeed < 25) {
+            return `Condições seguras no momento: sensação térmica de ${feels}°C, umidade de ${humidity}% e vento de ${wind} km/h. Não há sinal de calor desconfortável ou instabilidade relevante agora.`;
+        }
+
+        if (feels >= 30) {
+            return `Sensação térmica de ${feels}°C com umidade de ${humidity}%: o clima pode ficar desconfortável. Hidrate-se e evite exposição prolongada ao sol.`;
+        }
+
+        if (rain > 0.5) {
+            return `Há chuva registrada (${rain.toFixed(1)} mm/h) com vento de ${wind} km/h. Mantenha atenção em deslocamentos e acompanhe a evolução do tempo.`;
+        }
+
+        return `Risco calculado em ${Math.round(risk * 100)}%. Temperatura de ${temp}°C, sensação de ${feels}°C, umidade de ${humidity}% e vento de ${wind} km/h.`;
+    }
+
+    isGeneratedTextCoherent(text, data, risk) {
+        const normalized = (text || '').toLowerCase();
+        const feels = Number(data.feelsLike || data.temperature || 0);
+        const humidity = Number(data.humidity || 0);
+        const wind = Number(data.windSpeed || 0);
+        const rain = Number(data.precipitation || 0);
+
+        const heatStressWords = [
+            'abafad',
+            'calor intenso',
+            'clima pesado',
+            'muito quente',
+            'proteger do sol',
+            'exposição ao sol',
+            'exposicao ao sol'
+        ];
+        const hasHeatStress = heatStressWords.some(word => normalized.includes(word));
+        const mildAndStable = feels < 27 && humidity < 85 && wind < 25 && rain <= 0.5 && risk < 0.35;
+
+        if (mildAndStable && hasHeatStress) return false;
+        if (feels < 24 && normalized.includes('quente')) return false;
+
+        return true;
+    }
+
     async generateText(data, risk, conf) {
         const sigs = this.getDominantSignals(data);
         const topF = this.getTopRiskFactors(data, risk).map(f => f.factor).join(', ');
@@ -387,8 +434,9 @@ class MeteorGuardAI {
 Dados em tempo real: Sensação Térmica: ${Math.round(data.feelsLike || data.temperature)}°C (Termômetro marca ${Math.round(data.temperature)}°C), Umidade: ${data.humidity}%, Vento: ${data.windSpeed}km/h, Chuva: ${data.precipitation}mm/h.
 IMPORTANTE STRICTO: 
 1. Fale como um Assistente Virtual amigável e natural (conversacional).
-2. Se a Sensação Térmica for > 29°C, pareça preocupado com o calor e use palavras naturais como "bastante abafado", "calor intenso" ou "clima pesado". Nunca diga que a temperatura está "agradável" ou "moderada" nesse calor.
-3. Não use marcações de texto ou robóticas (como rótulos 'Clima Quente:'). Escreva fluidamente em 1 ou 2 frases curtas.`;
+2. Se a Sensação Térmica for menor que 27°C, NÃO use palavras como "abafado", "calor intenso", "clima pesado" ou recomendações de calor. Descreva como seguro, ameno ou estável quando os outros dados também estiverem baixos.
+3. Se a Sensação Térmica for > 29°C, pareça preocupado com o calor e use palavras naturais como "bastante abafado", "calor intenso" ou "clima pesado". Nunca diga que a temperatura está "agradável" ou "moderada" nesse calor.
+4. Não use marcações de texto ou robóticas (como rótulos 'Clima Quente:'). Escreva fluidamente em 1 ou 2 frases curtas.`;
 
         const apiKey = ['gsk_RV3mLLaCfgQV', 'KOf1o4poWGdyb3FY', 'VornO8g8dxrwSEYt', 'IZPNMQsE'].join('');
         
@@ -419,7 +467,11 @@ IMPORTANTE STRICTO:
                 const content = result.choices[0].message?.content || "";
                 const text = content.trim();
                 console.log("[METEORGUARD] Groq text:", text);
-                if (text) return text;
+                if (text && this.isGeneratedTextCoherent(text, data, risk)) return text;
+                if (text) {
+                    console.warn("[METEORGUARD] Groq text rejected by coherence guard:", text);
+                    return this.buildDeterministicWeatherText(data, risk);
+                }
                 return "ERRO: Api vazia.";
             }
         } catch (e) {
@@ -427,8 +479,7 @@ IMPORTANTE STRICTO:
         }
 
         // Fallback
-        if (risk < 0.4) return "Monitoramento estável. As condições climáticas estão ótimas para atividades fora de casa.";
-        return `O risco calculado é de ${Math.round(risk * 100)}%. Fique atento às condições climáticas de vento e chuva.`;
+        return this.buildDeterministicWeatherText(data, risk);
     }
 
     /**
