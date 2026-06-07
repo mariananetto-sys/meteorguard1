@@ -290,8 +290,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Auto-refresh silencioso a cada 4 minutos
             if (autoRefreshTimer) clearInterval(autoRefreshTimer);
             autoRefreshTimer = setInterval(async () => {
+                if (document.visibilityState === 'hidden') return;
+
                 try {
-                    console.log('[METEORGUARD] 🔄 Auto-refresh: atualizando dados...');
+                    console.log('[METEORGUARD] Auto-refresh: atualizando dados...');
                     const freshData = await WeatherService.getWeather(lat, lon);
                     lastWeatherData = freshData;
                     updateUI(freshData, name, country);
@@ -349,9 +351,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const lon = currentCityInfo.lon || -43.1729;
         const alt = currentCityInfo.altitude || 500;
         
-        const gradP = (Math.random() - 0.5) * 5; 
-        const gradT = (Math.random() - 0.5) * 4; 
-        const regionalState = (Math.abs(gradP) > 3 || Math.abs(gradT) > 3) ? 0.8 : 0.4;
+        const nextHour = weatherData.hourly?.[1] || weatherData.hourly?.[0] || {};
+        const gradP = Number.isFinite(nextHour.pressureMsl) ? nextHour.pressureMsl - aiInput.pressureMsl : 0;
+        const gradT = Number.isFinite(nextHour.temp) ? nextHour.temp - aiInput.temperature : 0;
+        const windTrend = Math.max(0, (nextHour.windSpeed || aiInput.windSpeed) - aiInput.windSpeed);
+        const rainTrend = Math.max(0, (nextHour.precipitation || aiInput.precipitation) - aiInput.precipitation);
+        const pressureDrop = Math.max(0, -gradP);
+        const regionalState = Math.min(0.9, 0.25 + (interpretation.dangerContext * 0.18) + (rainTrend * 0.04) + (windTrend * 0.015) + (pressureDrop * 0.025));
 
         // Ultimate v5.0 MAX prediction (70 optimized features)
         const prediction = await meteorGuardAI.predict({
@@ -365,10 +371,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update Trust & Regional Badges (with Anomaly Detection)
         const trustPct = Math.round((prediction.trustWeight || 0.75) * 100);
         const anomalyAlert = prediction.anomalyScore > 0.6 ? ' - ANOMALIA' : '';
-        DOM.aiTrustBadge.innerHTML = `<i class="fa-solid fa-microchip"></i> Trust: ${trustPct}%${anomalyAlert}`;
+        setElementWithIcon(DOM.aiTrustBadge, 'fa-microchip', `Estimativa: ${trustPct}%${anomalyAlert}`);
         
         const geoContext = currentCityInfo.name ? `${currentCityInfo.name} + Regional Mesh` : 'Ultimate Visual Active';
-        DOM.aiGeoBadge.innerHTML = `<i class="fa-solid fa-location-crosshairs"></i> ${geoContext}`;
+        setElementWithIcon(DOM.aiGeoBadge, 'fa-location-crosshairs', geoContext);
 
         // Update Risk Indicator
         DOM.riskIndicator.className = `risk-indicator ${prediction.level} transition-all`;
@@ -379,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAIAnalysis(prediction);
 
         // Render NLG (NLG from MeteorGuardAI v5.0 MAX)
-        DOM.riskMessage.innerHTML = '';
+        clearElement(DOM.riskMessage);
         typewriterEffect(DOM.riskMessage, prediction.explanation, 15);
 
         // Timestamp
@@ -397,18 +403,30 @@ document.addEventListener('DOMContentLoaded', () => {
         // v5.0 MAX: New Explainability Grid
         if (prediction.topFactors && prediction.topFactors.length > 0) {
             DOM.aiRiskFactors.classList.remove('hidden');
-            DOM.aiFactorsList.innerHTML = '';
+            clearElement(DOM.aiFactorsList);
             
             prediction.topFactors.forEach(f => {
-                DOM.aiFactorsList.innerHTML += `
-                    <div class="factor-item">
-                        <span class="factor-name">${f.factor}</span>
-                        <div class="factor-bar-container">
-                            <div class="factor-bar-fill" style="width: ${f.percentage}%"></div>
-                        </div>
-                        <span class="factor-value">${f.percentage}%</span>
-                    </div>
-                `;
+                const item = document.createElement('div');
+                item.className = 'factor-item';
+
+                const name = document.createElement('span');
+                name.className = 'factor-name';
+                name.textContent = f.factor;
+
+                const barContainer = document.createElement('div');
+                barContainer.className = 'factor-bar-container';
+
+                const bar = document.createElement('div');
+                bar.className = 'factor-bar-fill';
+                bar.style.width = `${Math.max(0, Math.min(100, Number(f.percentage) || 0))}%`;
+                barContainer.appendChild(bar);
+
+                const value = document.createElement('span');
+                value.className = 'factor-value';
+                value.textContent = `${Math.round(Number(f.percentage) || 0)}%`;
+
+                item.append(name, barContainer, value);
+                DOM.aiFactorsList.appendChild(item);
             });
         } else {
             DOM.aiRiskFactors.classList.add('hidden');
@@ -506,11 +524,18 @@ document.addEventListener('DOMContentLoaded', () => {
         modalDOM.overlay.classList.add('hidden');
     }
 
+    function setModalMetricLabels(labels) {
+        modalDOM.overlay.querySelectorAll('.temp-label').forEach((label, index) => {
+            label.textContent = labels[index] || '';
+        });
+    }
+
     function openDayModal(dayData, date) {
         const daysLong = i18n.t('daysLong');
         const months = i18n.t('months');
         
         const interp = WeatherService.getWeatherInterpretation(dayData.weatherCode);
+        setModalMetricLabels(['Máxima', 'Mínima', 'Chuva', 'UV Máx']);
         
         // Populate modal
         modalDOM.icon.className = `fa-solid ${interp.icon} fa-2x`;
@@ -522,13 +547,13 @@ document.addEventListener('DOMContentLoaded', () => {
         modalDOM.uv.textContent = dayData.uvMax?.toFixed(1) || '--';
         
         // Generate AI analysis for this day
-        const analysis = generateDayAnalysis(dayData);
-        modalDOM.analysis.innerHTML = analysis;
+        renderDayAnalysis(dayData);
         
         modalDOM.overlay.classList.remove('hidden');
     }
 
-    function generateDayAnalysis(day) {
+    function renderDayAnalysis(day) {
+        clearElement(modalDOM.analysis);
         const rainProb = day.rainProb;
         const maxTemp = day.maxTemp;
         const minTemp = day.minTemp;
@@ -563,23 +588,86 @@ document.addEventListener('DOMContentLoaded', () => {
         if (uvMax >= 11) tips.push(i18n.t('tipUVExtreme'));
         if (interp.dangerContext >= 3) tips.push(i18n.t('tipStorm')(interp.desc));
         if (tips.length === 0) tips.push(i18n.t('tipAllClear'));
-        
-        return `
-            <div class="analysis-title">
-                <i class="fa-solid fa-brain"></i> ${i18n.t('modalAITitle')}
-            </div>
-            <div class="analysis-text">
-                ${tips.map(t => `<p style="margin-bottom:6px;">${t}</p>`).join('')}
-            </div>
-            <div class="good-to-go ${verdictClass}">
-                <i class="fa-solid ${verdictIcon}"></i>
-                ${verdict}
-            </div>
-        `;
+
+        const title = document.createElement('div');
+        title.className = 'analysis-title';
+        title.append(createIcon('fa-brain'), document.createTextNode(` ${i18n.t('modalAITitle')}`));
+
+        const text = document.createElement('div');
+        text.className = 'analysis-text';
+        tips.forEach(tip => {
+            const p = document.createElement('p');
+            p.style.marginBottom = '6px';
+            p.textContent = tip;
+            text.appendChild(p);
+        });
+
+        const verdictBox = document.createElement('div');
+        verdictBox.className = `good-to-go ${verdictClass}`;
+        verdictBox.append(createIcon(verdictIcon), document.createTextNode(` ${verdict}`));
+
+        modalDOM.analysis.append(title, text, verdictBox);
+    }
+
+    function buildHourAdvice(hour) {
+        const rainProb = Number(hour.rainProb || 0);
+        const temp = Math.round(hour.temp || 0);
+        const wind = Number(hour.windSpeed || 0);
+        const humidity = Number(hour.humidity || 0);
+
+        if (rainProb >= 70) {
+            return `Alta chance de chuva neste horário (${rainProb}%). Se for sair, leve guarda-chuva ou capa e prefira um plano com cobertura.`;
+        }
+
+        if (temp <= 18) {
+            return `Horário frio, com ${temp}\u00b0C. Vale levar uma blusa e conferir se a chuva aumenta antes de sair.`;
+        }
+
+        if (wind >= 35) {
+            return `Vento forte para este horário (${wind.toFixed(0)} km/h). Tenha cuidado em áreas abertas e em deslocamentos.`;
+        }
+
+        if (humidity >= 88 && temp >= 26) {
+            return `Umidade alta com ${temp}\u00b0C pode deixar o ar mais pesado. Hidrate-se e acompanhe a previsão de chuva.`;
+        }
+
+        return `Condição sem alerta forte neste horário: ${temp}\u00b0C, chuva em ${rainProb}% e vento de ${wind.toFixed(0)} km/h.`;
+    }
+
+    function openHourModal(hour, date, timeStr) {
+        const interp = WeatherService.getWeatherInterpretation(hour.weatherCode);
+        setModalMetricLabels(['Temp.', 'Umidade', 'Chuva', 'Vento']);
+
+        modalDOM.icon.className = `fa-solid ${interp.icon} fa-2x`;
+        modalDOM.title.textContent = `${timeStr} - previsão horária`;
+        modalDOM.desc.textContent = interp.desc;
+        modalDOM.max.textContent = `${Math.round(hour.temp)}\u00b0`;
+        modalDOM.min.textContent = `${Math.round(hour.humidity || 0)}%`;
+        modalDOM.rain.textContent = `${Math.round(hour.rainProb || 0)}%`;
+        modalDOM.uv.textContent = `${Number(hour.windSpeed || 0).toFixed(1).replace('.0', '')} km/h`;
+
+        clearElement(modalDOM.analysis);
+        const title = document.createElement('div');
+        title.className = 'analysis-title';
+        title.append(createIcon('fa-clock'), document.createTextNode(' Detalhe horário'));
+
+        const text = document.createElement('div');
+        text.className = 'analysis-text';
+        const p = document.createElement('p');
+        p.style.marginBottom = '6px';
+        p.textContent = buildHourAdvice(hour);
+        text.appendChild(p);
+
+        const when = document.createElement('div');
+        when.className = 'good-to-go caution';
+        when.append(createIcon('fa-calendar-day'), document.createTextNode(` ${date.toLocaleDateString('pt-BR')} às ${timeStr}`));
+
+        modalDOM.analysis.append(title, text, when);
+        modalDOM.overlay.classList.remove('hidden');
     }
 
     function renderSearchResults(results) {
-        DOM.searchResults.innerHTML = '';
+        clearElement(DOM.searchResults);
         
         if (results.length === 0) {
             DOM.searchResults.classList.add('hidden');
@@ -615,13 +703,23 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (city.type && typeIcons[city.type]) iconClass = typeIcons[city.type];
             else if (city.type && city.type.startsWith('PPL')) iconClass = 'fa-city';
 
-            div.innerHTML = `
-                <i class="fa-solid ${iconClass}" style="opacity: 0.7; margin-right: 10px; width: 20px; text-align: center; color: var(--neon-blue);"></i>
-                <strong>${city.name}</strong> 
-                <span class="text-muted" style="font-size: 0.8em; margin-left: auto;">
-                    ${city.admin1 ? city.admin1 : city.country}
-                </span>
-            `;
+            const icon = createIcon(iconClass);
+            icon.style.opacity = '0.7';
+            icon.style.marginRight = '10px';
+            icon.style.width = '20px';
+            icon.style.textAlign = 'center';
+            icon.style.color = 'var(--neon-blue)';
+
+            const nameEl = document.createElement('strong');
+            nameEl.textContent = city.name || 'Local sem nome';
+
+            const meta = document.createElement('span');
+            meta.className = 'text-muted';
+            meta.style.fontSize = '0.8em';
+            meta.style.marginLeft = 'auto';
+            meta.textContent = city.admin1 ? city.admin1 : city.country;
+
+            div.append(icon, nameEl, meta);
             
             div.addEventListener('click', () => {
                 loadCity(city.lat, city.lon, city.name, city.country, city.type);
@@ -757,6 +855,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     // Utilities
     // -----------------------------------
+    function clearElement(element) {
+        if (!element) return;
+        element.replaceChildren();
+    }
+
+    function escapeHTML(value) {
+        return String(value ?? '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[char]));
+    }
+
+    function createIcon(className) {
+        const icon = document.createElement('i');
+        icon.className = `fa-solid ${className}`;
+        return icon;
+    }
+
+    function setElementWithIcon(element, iconClass, text) {
+        if (!element) return;
+        clearElement(element);
+        element.append(createIcon(iconClass), document.createTextNode(` ${text}`));
+    }
+
     function showLoading(show) {
         if (show) {
             DOM.overlay.classList.remove('hidden');
@@ -780,7 +905,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function typewriterEffect(element, text, speed = 30) {
         // Clear previous animation
         if (typewriterTimer) clearInterval(typewriterTimer);
-        element.innerHTML = '';
+        clearElement(element);
         element.classList.add('typing');
 
         let index = 0;
@@ -790,7 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
             index++;
             
             // Smart Highlighting: Destaca conselhos e conclusões importantes
-            let parsed = currentText;
+            let parsed = escapeHTML(currentText);
 
             // Alertas críticos (vermelho)
             parsed = parsed.replace(/(ALERTA:.*)/ig, '<strong class="neon-text-red">$1</strong>');
@@ -832,29 +957,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     function renderHourlyForecast(hourlyData) {
         if (!DOM.hourlyScroll || !hourlyData || hourlyData.length === 0) return;
-        
-        DOM.hourlyScroll.innerHTML = '';
+
+        clearElement(DOM.hourlyScroll);
         const nowHour = new Date().getHours();
-        
+
         hourlyData.forEach((hour, index) => {
             const date = new Date(hour.time);
             const hourNum = date.getHours();
             const timeStr = hourNum === nowHour && index === 0 ? i18n.t('now') : `${String(hourNum).padStart(2, '0')}:00`;
             const isNow = (hourNum === nowHour && index === 0);
-            
+
             const interp = WeatherService.getWeatherInterpretation(hour.weatherCode);
             const rainClass = hour.rainProb > 50 ? 'rain-high' : '';
-            
+
             const card = document.createElement('div');
             card.className = `hourly-card${isNow ? ' now' : ''}`;
-            card.innerHTML = `
-                <span class="hourly-time">${timeStr}</span>
-                <i class="fa-solid ${interp.icon} hourly-icon"></i>
-                <span class="hourly-temp">${Math.round(hour.temp)}°</span>
-                <span class="hourly-rain ${rainClass}">
-                    <i class="fa-solid fa-droplet"></i> ${hour.rainProb}%
-                </span>
-            `;
+            card.tabIndex = 0;
+            card.setAttribute('role', 'button');
+            card.setAttribute('aria-label', `Ver detalhes de ${timeStr}`);
+
+            const time = document.createElement('span');
+            time.className = 'hourly-time';
+            time.textContent = timeStr;
+
+            const icon = createIcon(interp.icon);
+            icon.classList.add('hourly-icon');
+
+            const temp = document.createElement('span');
+            temp.className = 'hourly-temp';
+            temp.textContent = `${Math.round(hour.temp)}\u00b0`;
+
+            const rain = document.createElement('span');
+            rain.className = `hourly-rain ${rainClass}`.trim();
+            rain.append(createIcon('fa-droplet'), document.createTextNode(` ${Math.round(hour.rainProb || 0)}%`));
+
+            const openDetails = () => openHourModal(hour, date, timeStr);
+            card.addEventListener('click', openDetails);
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openDetails();
+                }
+            });
+
+            card.append(time, icon, temp, rain);
             DOM.hourlyScroll.appendChild(card);
         });
     }
@@ -924,15 +1070,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (alerts.length > 0) {
             DOM.weatherAlertsBar.classList.remove('hidden');
             DOM.weatherAlertsBar.querySelector('.alerts-bar-header span').textContent = i18n.t('alertsTitle');
-            DOM.alertsList.innerHTML = alerts.map(a => `
-                <div class="alert-item ${a.level}">
-                    <i class="fa-solid ${a.icon}"></i>
-                    <span>${a.text}</span>
-                </div>
-            `).join('');
+            clearElement(DOM.alertsList);
+            alerts.forEach(a => {
+                const item = document.createElement('div');
+                item.className = `alert-item ${a.level}`;
+                const text = document.createElement('span');
+                text.textContent = a.text;
+                item.append(createIcon(a.icon), text);
+                DOM.alertsList.appendChild(item);
+            });
         } else {
             DOM.weatherAlertsBar.classList.add('hidden');
-            DOM.alertsList.innerHTML = '';
+            clearElement(DOM.alertsList);
         }
     }
 
@@ -1021,21 +1170,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const favs = getFavorites();
         
         if (favs.length === 0) {
-            DOM.favoritesList.innerHTML = '<p class="text-muted" style="padding:12px; text-align:center; font-size:0.85rem;">Nenhuma cidade salva ainda</p>';
+            clearElement(DOM.favoritesList);
+            const empty = document.createElement('p');
+            empty.className = 'text-muted';
+            empty.style.padding = '12px';
+            empty.style.textAlign = 'center';
+            empty.style.fontSize = '0.85rem';
+            empty.textContent = i18n.t('noSavedCities') || 'Nenhuma cidade salva ainda';
+            DOM.favoritesList.appendChild(empty);
             return;
         }
         
-        DOM.favoritesList.innerHTML = favs.map(fav => `
-            <div class="fav-item" data-lat="${fav.lat}" data-lon="${fav.lon}" data-name="${fav.name}" data-country="${fav.country}">
-                <div class="fav-item-info">
-                    <span class="fav-item-name">${fav.name}</span>
-                    <span class="fav-item-country">${fav.country}</span>
-                </div>
-                <button class="fav-remove-btn" data-name="${fav.name}" title="Remover">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-        `).join('');
+        clearElement(DOM.favoritesList);
+        favs.forEach(fav => {
+            const item = document.createElement('div');
+            item.className = 'fav-item';
+            item.dataset.lat = fav.lat;
+            item.dataset.lon = fav.lon;
+            item.dataset.name = fav.name || '';
+            item.dataset.country = fav.country || '';
+
+            const info = document.createElement('div');
+            info.className = 'fav-item-info';
+
+            const name = document.createElement('span');
+            name.className = 'fav-item-name';
+            name.textContent = fav.name || 'Local salvo';
+
+            const country = document.createElement('span');
+            country.className = 'fav-item-country';
+            country.textContent = fav.country || '';
+
+            const remove = document.createElement('button');
+            remove.className = 'fav-remove-btn';
+            remove.dataset.name = fav.name || '';
+            remove.title = 'Remover';
+            remove.appendChild(createIcon('fa-xmark'));
+
+            info.append(name, country);
+            item.append(info, remove);
+            DOM.favoritesList.appendChild(item);
+        });
         
         // Click on fav item to load city
         DOM.favoritesList.querySelectorAll('.fav-item').forEach(item => {
@@ -1154,10 +1329,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupChatListeners() {
         if (!DOM.chatTrigger) return;
 
-        DOM.chatTrigger.addEventListener('click', () => {
+        const toggleChat = () => {
             DOM.chatWindow.classList.toggle('hidden');
             if (!DOM.chatWindow.classList.contains('hidden')) {
                 DOM.chatInput.focus();
+            }
+        };
+
+        DOM.chatTrigger.addEventListener('click', toggleChat);
+        DOM.chatTrigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleChat();
             }
         });
 
@@ -1220,4 +1403,3 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.chatMessages.scrollTop = DOM.chatMessages.scrollHeight;
     }
 });
-

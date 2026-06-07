@@ -36,7 +36,7 @@
                 <div class="search-box glass-panel">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <input type="text" id="searchInput" autocomplete="off" placeholder="Buscar cidade...">
-                    <button id="searchBtn" class="glow-btn"><i class="fa-solid fa-arrow-right"></i></button>
+                    <button id="searchBtn" class="glow-btn" aria-label="Buscar cidade"><i class="fa-solid fa-arrow-right"></i></button>
                 </div>
                 <div id="searchResults" class="search-results glass-panel hidden"></div>
             </div>
@@ -44,7 +44,7 @@
             <div class="header-actions">
                 <!-- Favorites Button -->
                 <div class="favorites-wrapper">
-                    <button id="favoritesBtn" class="glow-btn icon-btn" title="Cidades salvas">
+                    <button id="favoritesBtn" class="glow-btn icon-btn" title="Cidades salvas" aria-label="Abrir cidades salvas">
                         <i class="fa-solid fa-bookmark"></i>
                     </button>
                     <div id="favoritesDropdown" class="favorites-dropdown neon-glass hidden">
@@ -59,7 +59,7 @@
 
                 <!-- Language Selector -->
                 <div class="lang-wrapper">
-                    <button id="langBtn" class="glow-btn icon-btn" title="Idioma">
+                    <button id="langBtn" class="glow-btn icon-btn" title="Idioma" aria-label="Selecionar idioma">
                         <i class="fa-solid fa-globe"></i>
                     </button>
                     <div id="langDropdown" class="lang-dropdown neon-glass hidden">
@@ -75,7 +75,7 @@
                     </div>
                 </div>
 
-                <button id="locationBtn" class="glow-btn icon-btn" title="Usar minha localização">
+                <button id="locationBtn" class="glow-btn icon-btn" title="Usar minha localização" aria-label="Usar minha localização">
                     <i class="fa-solid fa-location-crosshairs"></i>
                 </button>
             </div>
@@ -105,7 +105,7 @@
                     <div class="location-header">
                         <div class="location-title">
                             <h2 id="cityName" data-i18n="loadingCity">Carregando...</h2>
-                            <button id="favCityBtn" class="fav-city-btn" title="Salvar cidade">
+                            <button id="favCityBtn" class="fav-city-btn" title="Salvar cidade" aria-label="Salvar cidade">
                                 <i class="fa-regular fa-star"></i>
                             </button>
                         </div>
@@ -302,7 +302,7 @@
     <!-- Day Detail Modal -->
     <div id="dayModal" class="day-modal-overlay hidden">
         <div class="day-modal neon-glass">
-            <button id="dayModalClose" class="day-modal-close"><i class="fa-solid fa-xmark"></i></button>
+            <button id="dayModalClose" class="day-modal-close" aria-label="Fechar detalhes do dia"><i class="fa-solid fa-xmark"></i></button>
             <div class="day-modal-header">
                 <i id="dayModalIcon" class="fa-solid fa-cloud-sun fa-2x"></i>
                 <div>
@@ -340,7 +340,7 @@
             <i class="fa-solid fa-triangle-exclamation fa-4x blink-anim"></i>
             <h1 id="extremeAlertTitle">ALERTA GOVERNAMENTAL EXTREMO</h1>
             <p id="extremeAlertMsg">Condições climáticas na sua região apresentam risco severo e imediato.</p>
-            <button id="extremeAlertCloseBtn" class="extreme-alert-close" disabled>
+            <button id="extremeAlertCloseBtn" class="extreme-alert-close" aria-label="Fechar alerta extremo" disabled>
                 <span id="extremeAlertCloseText">FECHAR ALERTA (10s)</span>
             </button>
         </div>
@@ -358,7 +358,7 @@
     <!-- v8.1: Transformers.js removed for extreme stability and real-analysis focus. -->
 
     <!-- MeteorChat: Mini-Intelligence Interface -->
-    <div id="meteorChatTrigger" class="chat-trigger fade-in delay-3">
+    <div id="meteorChatTrigger" class="chat-trigger fade-in delay-3" role="button" tabindex="0" aria-label="Abrir MeteorChat AI">
         <i class="fa-solid fa-comments"></i>
         <span class="chat-tooltip">MeteorChat AI</span>
     </div>
@@ -370,7 +370,7 @@
                 <span>MeteorChat AI</span>
             </div>
             <div class="chat-header-actions">
-                <button id="closeChat"><i class="fa-solid fa-xmark"></i></button>
+                <button id="closeChat" aria-label="Fechar chat"><i class="fa-solid fa-xmark"></i></button>
             </div>
         </div>
         
@@ -384,7 +384,7 @@
         </div>
         <div class="chat-input-area">
             <input type="text" id="chatInput" placeholder="Digite sua pergunta..." autocomplete="off">
-            <button id="sendChat"><i class="fa-solid fa-paper-plane"></i></button>
+            <button id="sendChat" aria-label="Enviar mensagem"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 </body>

@@ -157,7 +157,9 @@ class MeteorGuardAI {
             const risk = heuristic;
             riskOutputs.push([risk]);
             // v5.5: Rótulo de confiança baseado na consistência física
-            confidenceOutputs.push([1 - Math.abs(risk - heuristic)]);
+            const trendMagnitude = Math.min(1, (Math.abs(d2[0]) / 6) + (Math.abs(d2[1]) / 12) + (Math.abs(d2[2]) / 18) + (Math.abs(d2[3]) / 10));
+            const confidence = Math.max(0.35, Math.min(0.92, 0.82 - (trendMagnitude * 0.32) + (Math.abs(risk - 0.5) * 0.18)));
+            confidenceOutputs.push([confidence]);
         }
         return { inputs, riskOutputs, confidenceOutputs };
     }
@@ -426,143 +428,83 @@ class MeteorGuardAI {
         return true;
     }
 
-    async generateText(data, risk, conf) {
-        const sigs = this.getDominantSignals(data);
-        const topF = this.getTopRiskFactors(data, risk).map(f => f.factor).join(', ');
-
-        const prompt = `Você é o MeteorGuard AI. Escreva uma análise climática curta e objetiva (1 ou 2 frases) para o alerta da dashboard.
-Dados em tempo real: Sensação Térmica: ${Math.round(data.feelsLike || data.temperature)}°C (Termômetro marca ${Math.round(data.temperature)}°C), Umidade: ${data.humidity}%, Vento: ${data.windSpeed}km/h, Chuva: ${data.precipitation}mm/h.
-IMPORTANTE STRICTO: 
-1. Fale como um Assistente Virtual amigável e natural (conversacional).
-2. Se a Sensação Térmica for menor que 27°C, NÃO use palavras como "abafado", "calor intenso", "clima pesado" ou recomendações de calor. Descreva como seguro, ameno ou estável quando os outros dados também estiverem baixos.
-3. Se a Sensação Térmica for > 29°C, pareça preocupado com o calor e use palavras naturais como "bastante abafado", "calor intenso" ou "clima pesado". Nunca diga que a temperatura está "agradável" ou "moderada" nesse calor.
-4. Não use marcações de texto ou robóticas (como rótulos 'Clima Quente:'). Escreva fluidamente em 1 ou 2 frases curtas.`;
-
-        const apiKey = ['gsk_RV3mLLaCfgQV', 'KOf1o4poWGdyb3FY', 'VornO8g8dxrwSEYt', 'IZPNMQsE'].join('');
-        
+    async requestServerAI(payload) {
         try {
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            const response = await fetch('/api/chat', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'llama-3.1-8b-instant',
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.6,
-                    max_tokens: 80
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
 
-            if (!response.ok) {
-                console.warn("[METEORGUARD] Groq Error:", response.status);
-                return "Erro na API da Groq. Verifique a cota ou chave.";
-            }
-
             const result = await response.json();
-            console.log("[METEORGUARD] Groq response:", result);
-            if (result.error) { console.error("Groq API Error:", result.error); }
-            if (result.choices && result.choices.length > 0) {
-                const content = result.choices[0].message?.content || "";
-                const text = content.trim();
-                console.log("[METEORGUARD] Groq text:", text);
-                if (text && this.isGeneratedTextCoherent(text, data, risk)) return text;
-                if (text) {
-                    console.warn("[METEORGUARD] Groq text rejected by coherence guard:", text);
-                    return this.buildDeterministicWeatherText(data, risk);
-                }
-                return "ERRO: Api vazia.";
-            }
+            if (!response.ok) throw new Error(result.error || `AI API HTTP ${response.status}`);
+            return (result.text || '').trim();
         } catch (e) {
-            console.error("Groq API Local Error:", e);
+            console.warn('[METEORGUARD] Server AI unavailable:', e.message);
+            return '';
         }
+    }
 
-        // Fallback
+    async generateText(data, risk, conf) {
+        const text = await this.requestServerAI({ mode: 'analysis', data, risk });
+
+        if (text && this.isGeneratedTextCoherent(text, data, risk)) return text;
+        if (text) console.warn('[METEORGUARD] Server AI text rejected by coherence guard:', text);
+
         return this.buildDeterministicWeatherText(data, risk);
     }
 
+    isChatTextCoherent(text, query, data) {
+        const normalized = (text || '').toLowerCase();
+        const q = (query || '').toLowerCase();
+        const feels = Number(data.feelsLike || data.temperature || 0);
+        const uv = Number(data.uvIndex || 0);
+        const type = data.type || 'PPL';
+        const name = (data.name || '').toLowerCase();
+        const askedSun = q.includes('sol') || q.includes('uv') || q.includes('protetor');
+        const askedBeachOrPark = q.includes('praia') || q.includes('mar') || q.includes('parque');
+        const locationIsBeachOrPark = type === 'BECH' || type === 'PARK' || name.includes('praia') || name.includes('parque');
+
+        if (feels < 27 && uv < 8 && !askedSun && normalized.includes('protetor solar')) return false;
+        if (feels < 24 && (normalized.includes('calor') || normalized.includes('abafad'))) return false;
+        if (!askedBeachOrPark && !locationIsBeachOrPark && (normalized.includes('praia') || normalized.includes('parque') || normalized.includes('mar'))) return false;
+
+        return true;
+    }
+
+    buildDeterministicChatText(query, data) {
+        const feels = Math.round(data.feelsLike || data.temperature || 0);
+        const temp = Math.round(data.temperature || feels);
+        const wind = Number(data.windSpeed || 0).toFixed(1).replace('.0', '');
+        const currentRain = Number(data.precipitation || 0);
+        const today = Array.isArray(data.daily) && data.daily.length ? data.daily[0] : null;
+        const rainProb = Number(today?.rainProb || 0);
+        const rainSum = Number(today?.rainSum || 0);
+        const isGoingOut = /sair|rua|passear|andar|hoje/.test(query || '');
+        const coldNote = feels <= 23 ? 'esta frio/ameno para muita gente, entao leve uma blusa leve' : 'a temperatura esta confortavel';
+
+        if (isGoingOut && (rainProb >= 70 || rainSum >= 5 || currentRain > 0.5)) {
+            return `Pode sair, mas va preparado: a sensacao esta em ${feels}\u00b0C (${temp}\u00b0C no termometro) e ha alta chance de chuva (${rainProb}%). ${coldNote}; leve guarda-chuva ou capa e evite depender de atividade ao ar livre sem cobertura.`;
+        }
+
+        if (isGoingOut) {
+            return `Da para sair: sensacao de ${feels}\u00b0C, vento de ${wind} km/h e sem sinal forte de instabilidade agora. ${coldNote}.`;
+        }
+
+        return `Agora esta com ${temp}\u00b0C e sensacao de ${feels}\u00b0C, vento de ${wind} km/h e chance de chuva hoje em ${rainProb}%. Para sair, o principal ponto e se proteger da chuva e do frio/ameno, nao do calor.`;
+    }
+
     /**
-     * MeteorGuard AI v9.0: Chat Powered By Groq
+     * MeteorGuard AI v9.2: Chat proxied through serverless API with local coherence guard.
      */
     async askAI(query, data) {
         query = query.toLowerCase().trim();
-        const type = data.type || 'PPL';
-        const name = (data.name || '').toLowerCase();
-        
-        const isBeach = type === 'BECH' || name.includes('praia') || query.includes('praia') || query.includes('mar');
-        const isPark = type === 'PARK' || name.includes('parque') || name.includes('park') || query.includes('parque');
+        const text = await this.requestServerAI({ mode: 'chat', query, data });
+        if (text && this.isChatTextCoherent(text, query, data)) return text;
+        if (text) console.warn('[METEORCHAT] Server AI text rejected by coherence guard:', text);
 
-        const today = new Date().toLocaleDateString('pt-BR');
-
-        const prompt = `Você é o MeteorGuard AI, um assistente meteorológico virtual inteligente, educado e focado na segurança do usuário.
-Data de hoje: ${today}
-O usuário enviou a seguinte mensagem: "${query}"
-
-Contexto Local do Usuário: ${data.name || 'Localização Desconhecida'} ${isBeach ? '(É uma Praia / Litoral)' : isPark ? '(É um Parque)' : ''}
-Dados Climáticos em tempo real:
-- Sensação Térmica: ${Math.round(data.feelsLike || data.temperature)}°C (Termômetro apontando: ${Math.round(data.temperature)}°C)
-- Umidade: ${data.humidity}% (Não dê atenção excessiva a isso a menos que seja extremo)
-- Vento: ${data.windSpeed} km/h (Rajadas: ${data.windGusts} km/h)
-- Precipitação/Chuva: ${data.precipitation} mm/h
-- Probabilidade de Risco Meteorológico atual calculada: ${Math.round((data.regionalState || 0) * 100)}%
-
-Previsão para os próximos 14 dias:
-${(data.daily || []).slice(0, 14).map(day => {
-    const d = new Date(day.date + 'T12:00:00');
-    const semana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    const diaNome = semana[d.getDay()];
-    return `- ${day.date} (${diaNome}): Máx ${day.maxTemp}°C, Chuva ${day.rainSum}mm (${day.rainProb}%)`;
-}).join('\n')}
-
-Instruções Estritas:
-1. Responda diretamente à pergunta do usuário baseando-se nas métricas e na segurança humana.
-2. Seja incrivelmente útil e claro. Pare de culpar a "umidade" por tudo, fale do cenário global.
-3. Se for uma praia ou parque, aja de acordo e use o contexto de forma natural e amigável.
-4. Analise com atenção o dia específico que o usuário pediu (ex: se ele perguntou de 'domingo', localize o domingo na lista de previsão e foque nele).
-5. Seja super conciso (apenas 2 ou 3 frases naturais). Aja como uma inteligência num chat rápido.
-6. Não use markdown (* ou **), apenas texto limpo e legível.
-7. Responda amigavelmente em Português do Brasil.`;
-
-        const apiKey = ['gsk_RV3mLLaCfgQV', 'KOf1o4poWGdyb3FY', 'VornO8g8dxrwSEYt', 'IZPNMQsE'].join('');
-        
-        try {
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'llama-3.1-8b-instant',
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.7,
-                    max_tokens: 150
-                })
-            });
-
-            if (!response.ok) {
-                console.warn("[METEORCHAT] Groq Error:", response.status);
-                return "A Groq API está temporariamente indisponível.";
-            }
-
-            const result = await response.json();
-            console.log("[METEORCHAT] Groq response:", result);
-            if (result.error) { console.error("Groq API Error:", result.error); }
-            if (result.choices && result.choices.length > 0) {
-                const content = result.choices[0].message?.content || "";
-                const text = content.trim();
-                console.log("[METEORCHAT] Groq text:", text);
-                if (text) return text;
-                return "A API retornou uma mensagem vazia.";
-            }
-        } catch (e) {
-            console.error("Groq API Local Error:", e);
-        }
-
-        return "Com base nos sensores (Temp: " + Math.round(data.temperature) + "°C), as condições estão sob controle. Posso ajudar com mais alguma dúvida específica?";
+        return this.buildDeterministicChatText(query, data);
     }
-
     getRiskLevel(risk) { if (risk > 0.8) return 'critical'; if (risk > 0.6) return 'danger'; if (risk > 0.35) return 'warning'; return 'safe'; }
     getRiskTitle(risk) { if (risk > 0.8) return 'RISCO EXTREMO'; if (risk > 0.6) return 'PERIGO'; if (risk > 0.35) return 'ATENÇÃO'; return 'SEGURO'; }
     getRiskColor(risk) { if (risk > 0.8) return '#8f1f18'; if (risk > 0.6) return '#c84a3f'; if (risk > 0.35) return '#b98418'; return '#2f8f83'; }

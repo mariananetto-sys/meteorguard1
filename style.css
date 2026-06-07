@@ -995,6 +995,12 @@ section {
     min-height: 118px;
     gap: 8px;
     padding: 12px 8px;
+    cursor: pointer;
+}
+
+.hourly-card:focus-visible {
+    outline: 2px solid rgba(47,143,131,0.55);
+    outline-offset: 3px;
 }
 
 .hourly-card:hover,

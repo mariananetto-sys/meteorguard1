@@ -13,7 +13,7 @@ class WeatherService {
         const rLat = parseFloat(lat).toFixed(4);
         const rLon = parseFloat(lon).toFixed(4);
 
-        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${rLat}&longitude=${rLon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_gusts_10m,surface_pressure,cloud_cover,visibility&hourly=temperature_2m,weather_code,precipitation_probability,precipitation,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max&timezone=auto&forecast_hours=24&forecast_days=14`;
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${rLat}&longitude=${rLon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_gusts_10m,surface_pressure,cloud_cover,visibility&hourly=temperature_2m,weather_code,precipitation_probability,precipitation,wind_speed_10m,relative_humidity_2m,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max&timezone=auto&forecast_hours=24&forecast_days=14`;
         const airQualityUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${rLat}&longitude=${rLon}&current=pm2_5,pm10,uv_index`;
         
         try {
@@ -44,7 +44,8 @@ class WeatherService {
                         rainProb: weatherData.hourly.precipitation_probability?.[i] || 0,
                         precipitation: weatherData.hourly.precipitation?.[i] || 0,
                         windSpeed: weatherData.hourly.wind_speed_10m?.[i] || 0,
-                        humidity: weatherData.hourly.relative_humidity_2m?.[i] || 50
+                        humidity: weatherData.hourly.relative_humidity_2m?.[i] || 50,
+                        pressureMsl: weatherData.hourly.surface_pressure?.[i] || weatherData.current.surface_pressure || 1013
                     });
                 }
             }
